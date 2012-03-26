@@ -109,7 +109,11 @@
 #include <mach/rpm-regulator.h>
 #include <mach/restart.h>
 #include <mach/cable_detect.h>
+<<<<<<< HEAD:arch/arm/mach-msm/board-vigor.c
 #include <mach/panel_id.h>
+=======
+#include <linux/msm_tsens.h>
+>>>>>>> 46e99cc... driver/thermal: create kernel MSM thermal management for MSM8x60 SOC:arch/arm/mach-msm/board-pyramid.c
 
 #include "board-vigor.h"
 #include "devices.h"
@@ -4065,6 +4069,7 @@ struct sx150x_low_power_cfg {
 	unsigned val;
 };
 
+<<<<<<< HEAD:arch/arm/mach-msm/board-vigor.c
 static struct sx150x_low_power_cfg
 common_sx150x_lp_cfgs[] __initdata = {
 	{GPIO_WLAN_DEEP_SLEEP_N, 0},
@@ -4125,6 +4130,21 @@ static struct i2c_board_info fluid_expanders_i2c_epm_info[] = {
 #endif
 #endif
 #endif
+=======
+static struct tsens_platform_data pyr_tsens_pdata  = {
+		.tsens_factor		= 1000,
+		.hw_type		= MSM_8660,
+		.tsens_num_sensor	= 5,
+		.slope 			= 702,
+};
+
+/*
+static struct platform_device msm_tsens_device = {
+	.name   = "tsens-tm",
+	.id = -1,
+};
+*/
+>>>>>>> 46e99cc... driver/thermal: create kernel MSM thermal management for MSM8x60 SOC:arch/arm/mach-msm/board-pyramid.c
 
 #ifdef CONFIG_SENSORS_MSM_ADC
 static struct adc_access_fn xoadc_fn = {
@@ -4866,6 +4886,7 @@ static struct pm8058_led_config pm_led_config[] = {
 	{
 		.name = "charming-led",
 		.type = PM8058_LED_DRVX,
+<<<<<<< HEAD:arch/arm/mach-msm/board-vigor.c
 		.bank = 5,
 		.flags = PM8058_LED_LTU_EN | PM8058_LED_BLINK_EN,
 		.period_us = USEC_PER_SEC / 1000,
@@ -4879,6 +4900,8 @@ static struct pm8058_led_config pm_led_config[] = {
 	{
 		.name = "button-backlight",
 		.type = PM8058_LED_DRVX,
+=======
+>>>>>>> 46e99cc... driver/thermal: create kernel MSM thermal management for MSM8x60 SOC:arch/arm/mach-msm/board-pyramid.c
 		.bank = 6,
 		.flags = PM8058_LED_LTU_EN | PM8058_LED_DYNAMIC_BRIGHTNESS_EN,
 		.period_us = USEC_PER_SEC / 1000,
@@ -4886,8 +4909,412 @@ static struct pm8058_led_config pm_led_config[] = {
 		.duites_size = 8,
 		.duty_time_ms = 32,
 		.lut_flag = PM_PWM_LUT_RAMP_UP | PM_PWM_LUT_PAUSE_HI_EN,
+<<<<<<< HEAD:arch/arm/mach-msm/board-vigor.c
 		.out_current = 20,
 	},
+=======
+		.out_current = 10,
+	},
+
+};
+
+static struct pm8058_led_platform_data pm8058_leds_data = {
+	.led_config = pm_led_config,
+	.num_leds = ARRAY_SIZE(pm_led_config),
+	.duties = {0, 15, 30, 45, 60, 75, 90, 100,
+		   100, 90, 75, 60, 45, 30, 15, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0,
+		   0, 0, 0, 0, 0, 0, 0, 0},
+};
+
+static struct platform_device pm8058_leds = {
+	.name	= "leds-pm8058",
+	.id	= -1,
+	.dev	= {
+		.platform_data	= &pm8058_leds_data,
+	},
+};
+
+#ifdef CONFIG_FB_MSM_HDMI_MHL
+static struct regulator *reg_8901_l0;
+static struct regulator *reg_8058_l19;
+static struct regulator *reg_8901_l3;
+
+static uint32_t msm_hdmi_off_gpio[] = {
+	GPIO_CFG(170,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(171,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(172,  0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
+};
+
+static uint32_t msm_hdmi_on_gpio[] = {
+	GPIO_CFG(170,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_16MA),
+	GPIO_CFG(171,  1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_16MA),
+	GPIO_CFG(172,  1, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),
+};
+
+void hdmi_hpd_feature(int enable);
+
+static void mhl_sii9234_1v2_power(bool enable)
+{
+	static bool prev_on;
+
+	if (enable == prev_on)
+		return;
+
+	if (enable) {
+		config_gpio_table(msm_hdmi_on_gpio, ARRAY_SIZE(msm_hdmi_on_gpio));
+		hdmi_hpd_feature(1);
+		pr_info("%s(on): success\n", __func__);
+	} else {
+		config_gpio_table(msm_hdmi_off_gpio, ARRAY_SIZE(msm_hdmi_off_gpio));
+		hdmi_hpd_feature(0);
+		pr_info("%s(off): success\n", __func__);
+	}
+
+	prev_on = enable;
+}
+
+static int mhl_sii9234_all_power(bool enable)
+{
+	static bool prev_on;
+	int rc;
+
+	if (enable == prev_on)
+		return 0;
+
+	if (!reg_8058_l19)
+		_GET_REGULATOR(reg_8058_l19, "8058_l19");
+	if (!reg_8901_l3)
+		_GET_REGULATOR(reg_8901_l3, "8901_l3");
+	if (!reg_8901_l0)
+		_GET_REGULATOR(reg_8901_l0, "8901_l0");
+
+	if (enable) {
+		rc = regulator_set_voltage(reg_8058_l19, 1800000, 1800000);
+		if (rc) {
+			pr_err("%s: regulator_set_voltage reg_8058_l19 failed rc=%d\n",
+				__func__, rc);
+			return rc;
+		}
+		rc = regulator_set_voltage(reg_8901_l3, 3300000, 3300000);
+		if (rc) {
+			pr_err("%s: regulator_set_voltage reg_8901_l3 failed rc=%d\n",
+				__func__, rc);
+			return rc;
+		}
+
+		rc = regulator_set_voltage(reg_8901_l0, 1200000, 1200000);
+		if (rc) {
+			pr_err("%s: regulator_set_voltage reg_8901_l0 failed rc=%d\n",
+				__func__, rc);
+			return rc;
+		}	rc = regulator_enable(reg_8058_l19);
+
+		if (rc) {
+			pr_err("'%s' regulator enable failed, rc=%d\n",
+				"reg_8058_l19", rc);
+			return rc;
+		}
+		rc = regulator_enable(reg_8901_l3);
+		if (rc) {
+			pr_err("'%s' regulator enable failed, rc=%d\n",
+				"reg_8901_l3", rc);
+			return rc;
+		}
+
+		rc = regulator_enable(reg_8901_l0);
+		if (rc) {
+			pr_err("'%s' regulator enable failed, rc=%d\n",
+				"reg_8901_l0", rc);
+			return rc;
+		}
+		pr_info("%s(on): success\n", __func__);
+	} else {
+		rc = regulator_disable(reg_8058_l19);
+		if (rc)
+			pr_warning("'%s' regulator disable failed, rc=%d\n",
+				"reg_8058_l19", rc);
+		rc = regulator_disable(reg_8901_l3);
+		if (rc)
+			pr_warning("'%s' regulator disable failed, rc=%d\n",
+				"reg_8901_l3", rc);
+		rc = regulator_disable(reg_8901_l0);
+		if (rc)
+			pr_warning("'%s' regulator disable failed, rc=%d\n",
+				"reg_8901_l0", rc);
+		pr_info("%s(off): success\n", __func__);
+	}
+
+	prev_on = enable;
+
+	return 0;
+}
+
+#ifdef CONFIG_FB_MSM_HDMI_MHL_SII9234
+static uint32_t mhl_gpio_table[] = {
+	GPIO_CFG(PYRAMID_GPIO_MHL_RESET, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+	GPIO_CFG(PYRAMID_GPIO_MHL_INT, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA),
+};
+static int mhl_sii9234_power(int on)
+{
+	int rc = 0;
+
+	switch (on) {
+	case 0:
+		mhl_sii9234_1v2_power(false);
+		break;
+	case 1:
+		mhl_sii9234_all_power(true);
+		config_gpio_table(mhl_gpio_table, ARRAY_SIZE(mhl_gpio_table));
+		break;
+	default:
+		pr_warning("%s(%d) got unsupport parameter!!!\n", __func__, on);
+		break;
+	}
+	return rc;
+}
+
+static T_MHL_PLATFORM_DATA mhl_sii9234_device_data = {
+	.gpio_intr = PYRAMID_GPIO_MHL_INT,
+	.gpio_reset = PYRAMID_GPIO_MHL_RESET,
+	.ci2ca = 0,
+	#ifdef CONFIG_FB_MSM_HDMI_MHL
+	.mhl_usb_switch		= pyramid_usb_dpdn_switch,
+	.mhl_1v2_power = mhl_sii9234_1v2_power,
+	#endif
+	.power = mhl_sii9234_power,
+};
+
+static struct i2c_board_info msm_i2c_gsbi7_mhl_sii9234_info[] =
+{
+	{
+		I2C_BOARD_INFO(MHL_SII9234_I2C_NAME, 0x72 >> 1),
+		.platform_data = &mhl_sii9234_device_data,
+		.irq = MSM_GPIO_TO_INT(PYRAMID_GPIO_MHL_INT)
+	},
+};
+#endif
+#endif
+
+
+static struct platform_device *pyramid_devices[] __initdata = {
+	&ram_console_device,
+	&msm_device_smd,
+	&msm_device_uart_dm12,
+#ifdef CONFIG_I2C_QUP
+	&msm_gsbi3_qup_i2c_device,
+	&msm_gsbi4_qup_i2c_device,
+	&msm_gsbi5_qup_i2c_device,
+	&msm_gsbi7_qup_i2c_device,
+	&msm_gsbi8_qup_i2c_device,
+	&msm_gsbi9_qup_i2c_device,
+	&msm_gsbi10_qup_i2c_device,
+	&msm_gsbi12_qup_i2c_device,
+#endif
+#ifdef CONFIG_SERIAL_MSM_HS
+	&msm_device_uart_dm1,
+#endif
+#ifdef CONFIG_MSM_SSBI
+	&msm_device_ssbi_pmic1,
+	&msm_device_ssbi_pmic2,
+#endif
+#ifdef CONFIG_I2C_SSBI
+	&msm_device_ssbi2,
+	&msm_device_ssbi3,
+#endif
+#if defined(CONFIG_USB_PEHCI_HCD) || defined(CONFIG_USB_PEHCI_HCD_MODULE)
+	&isp1763_device,
+#endif
+
+#if defined (CONFIG_MSM_8x60_VOIP)
+	&asoc_msm_mvs,
+	&asoc_mvs_dai0,
+	&asoc_mvs_dai1,
+#endif
+
+	&msm_device_otg,
+#ifdef CONFIG_BATTERY_MSM
+	&msm_batt_device,
+#endif
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+	&android_pmem_device,
+	&android_pmem_adsp_device,
+	&android_pmem_adsp2_device,
+#endif
+	&android_pmem_audio_device,
+	&android_pmem_smipool_device,
+#endif
+#ifdef CONFIG_MSM_ROTATOR
+	&msm_rotator_device,
+#endif
+	&msm_kgsl_3d0,
+	&msm_kgsl_2d0,
+	&msm_kgsl_2d1,
+#ifdef CONFIG_MSM_CAMERA
+#ifdef CONFIG_S5K3H1GX
+	&msm_camera_sensor_s5k3h1gx,
+#endif
+	&msm_camera_sensor_webcam,
+
+#endif
+#ifdef CONFIG_MSM_GEMINI
+	&msm_gemini_device,
+#endif
+#ifdef CONFIG_MSM_VPE
+	&msm_vpe_device,
+#endif
+
+#if defined(CONFIG_MSM_RPM_LOG) || defined(CONFIG_MSM_RPM_LOG_MODULE)
+	&msm_rpm_log_device,
+#endif
+#if defined(CONFIG_MSM_RPM_STATS_LOG)
+	&msm_rpm_stat_device,
+#endif
+	&msm_device_vidc,
+#ifdef CONFIG_SENSORS_MSM_ADC
+	&msm_adc_device,
+#endif
+	&rpm_regulator_device,
+
+#if defined(CONFIG_CRYPTO_DEV_QCRYPTO) || \
+		defined(CONFIG_CRYPTO_DEV_QCRYPTO_MODULE)
+	&qcrypto_device,
+#endif
+
+#ifdef CONFIG_HTC_BATT8x60
+	&htc_battery_pdev,
+#endif
+#if defined(CONFIG_CRYPTO_DEV_QCEDEV) || \
+		defined(CONFIG_CRYPTO_DEV_QCEDEV_MODULE)
+	&qcedev_device,
+#endif
+
+
+#if defined(CONFIG_TSIF) || defined(CONFIG_TSIF_MODULE)
+#ifdef CONFIG_MSM_USE_TSIF1
+	&msm_device_tsif[1],
+#else
+	&msm_device_tsif[0],
+#endif /* CONFIG_MSM_USE_TSIF1 */
+#endif /* CONFIG_TSIF */
+
+#ifdef CONFIG_HW_RANDOM_MSM
+	&msm_device_rng,
+#endif
+
+	//&msm_tsens_device,
+	&msm_rpm_device,
+	&cable_detect_device,
+#ifdef CONFIG_BT
+	&pyramid_rfkill,
+#endif
+	&pm8058_leds,
+	&msm8660_device_watchdog,
+};
+
+static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
+	/* Kernel SMI memory pool for video core, used for firmware */
+	/* and encoder, decoder scratch buffers */
+	/* Kernel SMI memory pool should always precede the user space */
+	/* SMI memory pool, as the video core will use offset address */
+	/* from the Firmware base */
+	[MEMTYPE_SMI_KERNEL] = {
+		.start	=	KERNEL_SMI_BASE,
+		.limit	=	KERNEL_SMI_SIZE,
+		.size	=	KERNEL_SMI_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
+	/* User space SMI memory pool for video core */
+	/* used for encoder, decoder input & output buffers  */
+	[MEMTYPE_SMI] = {
+		.start	=	USER_SMI_BASE,
+		.limit	=	USER_SMI_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
+	[MEMTYPE_EBI0] = {
+		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
+	},
+	[MEMTYPE_EBI1] = {
+		.start	=	MSM_PMEM_KERNEL_EBI1_BASE,
+		.limit	=	MSM_PMEM_KERNEL_EBI1_SIZE,
+		.size	=	MSM_PMEM_KERNEL_EBI1_SIZE,
+		.flags	= 	MEMTYPE_FLAGS_FIXED,
+	},
+};
+
+#ifdef CONFIG_ANDROID_PMEM
+static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
+{
+	pdata->start = start;
+	pdata->size = size;
+	pr_info("%s: allocating %lu bytes at 0x%p (0x%lx physical) for %s\n",
+		__func__, size, __va(start), start, pdata->name);
+}
+#endif
+
+static void __init size_pmem_devices(void)
+{
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+	size_pmem_device(&android_pmem_pdata, MSM_PMEM_MDP_BASE, pmem_mdp_size);
+	size_pmem_device(&android_pmem_adsp_pdata, MSM_PMEM_ADSP_BASE, pmem_adsp_size);
+	size_pmem_device(&android_pmem_adsp2_pdata, MSM_PMEM_ADSP2_BASE, pmem_adsp2_size);
+#endif
+	size_pmem_device(&android_pmem_smipool_pdata, MSM_PMEM_SMIPOOL_BASE, MSM_PMEM_SMIPOOL_SIZE);
+	size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE, MSM_PMEM_AUDIO_SIZE);
+#endif
+}
+
+#ifdef CONFIG_ANDROID_PMEM
+static void __init reserve_memory_for(struct android_pmem_platform_data *p)
+{
+	/* If we have set a pre-defined PMEM start base,
+	 * no need to reserve it in system again.
+	 */
+	if (p->start == 0) {
+		pr_info("%s: reserving %lx bytes in memory pool for %s.\n", __func__, p->size, p->name);
+		msm8x60_reserve_table[p->memory_type].size += p->size;
+	}
+}
+#endif
+
+static void __init reserve_pmem_memory(void)
+{
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+	reserve_memory_for(&android_pmem_pdata);
+	reserve_memory_for(&android_pmem_adsp_pdata);
+	reserve_memory_for(&android_pmem_adsp2_pdata);
+#endif
+	reserve_memory_for(&android_pmem_smipool_pdata);
+	reserve_memory_for(&android_pmem_audio_pdata);
+#endif
+}
+
+static void __init msm8x60_calculate_reserve_sizes(void)
+{
+#ifdef CONFIG_ION_MSM
+	pyramid_ion_reserve_memory(msm8x60_reserve_table);
+#endif
+
+	size_pmem_devices();
+	reserve_pmem_memory();
+}
+
+static int msm8x60_paddr_to_memtype(unsigned int paddr)
+{
+	if (paddr >= 0x40000000 && paddr < 0x60000000)
+		return MEMTYPE_EBI1;
+	if (paddr >= 0x38000000 && paddr < 0x40000000)
+		return MEMTYPE_SMI;
+	return MEMTYPE_NONE;
+}
+>>>>>>> 46e99cc... driver/thermal: create kernel MSM thermal management for MSM8x60 SOC:arch/arm/mach-msm/board-pyramid.c
 
 };
 
@@ -7803,6 +8230,14 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	struct kobject *properties_kobj;
 	struct regulator *margin_power;
 
+<<<<<<< HEAD:arch/arm/mach-msm/board-vigor.c
+=======
+	raw_speed_bin = readl(QFPROM_SPEED_BIN_ADDR);
+	speed_bin = raw_speed_bin & 0xF;
+
+	msm_tsens_early_init(&pyr_tsens_pdata);
+
+>>>>>>> 46e99cc... driver/thermal: create kernel MSM thermal management for MSM8x60 SOC:arch/arm/mach-msm/board-pyramid.c
 	/*
 	 * Initialize RPM first as other drivers and devices may need
 	 * it for their initialization.
