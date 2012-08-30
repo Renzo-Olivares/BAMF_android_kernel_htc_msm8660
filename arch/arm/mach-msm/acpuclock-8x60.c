@@ -45,7 +45,8 @@
 #define L_VAL_SCPLL_CAL_MIN	0x08 /* =  432 MHz with 27MHz source */
 #define L_VAL_SCPLL_CAL_MAX	0x1C /* = 1512 MHz with 27MHz source */
 
-#define MAX_VDD_SC		1250000 /* uV */
+#define MAX_VDD_SC		CONFIG_CPU_FREQ_MAX_VDD /* uV */
+#define MIN_VDD_SC		CONFIG_CPU_FREQ_MIN_VDD /* uV */
 #define MAX_VDD_MEM		1250000 /* uV */
 #define MAX_VDD_DIG		1200000 /* uV */
 #define MAX_AXI			 310500 /* KHz */
@@ -669,17 +670,6 @@ out:
 	return rc;
 }
 
-#ifdef CONFIG_PERFLOCK
-unsigned int get_max_cpu_freq(void)
-{
-	struct clkctl_acpu_speed *f;
-	for (f = acpu_freq_tbl; f->acpuclk_khz != 0; f++)
-		;
-	f--;
-	return f->acpuclk_khz;;
-}
-#endif
-
 static void __init scpll_init(int sc_pll)
 {
 	uint32_t regval;
@@ -983,3 +973,33 @@ static int __init acpuclk_8x60_init(struct acpuclk_soc_data *soc_data)
 struct acpuclk_soc_data acpuclk_8x60_soc_data __initdata = {
 	.init = acpuclk_8x60_init,
 };
+#ifdef CONFIG_VDD_USERSPACE
+ssize_t acpuclk_get_vdd_levels_str(char *buf)
+{
+	int i, len = 0;
+	if (buf) {
+		mutex_lock(&drv_state.lock);
+		for (i = 0; acpu_freq_tbl[i].acpuclk_khz; i++) {
+			if (acpu_freq_tbl[i].use_for_scaling[0] || acpu_freq_tbl[i].use_for_scaling[1]) {
+				len += sprintf(buf + len, "%8u: %4d\n", acpu_freq_tbl[i].acpuclk_khz, acpu_freq_tbl[i].vdd_sc);
+			}
+		}
+		mutex_unlock(&drv_state.lock);
+	}
+	return len;
+} 
+
+void acpuclk_set_vdd(unsigned int khz, int vdd)
+{
+	int i;
+	vdd = vdd / 25 * 25;	//! regulator only accepts multiples of 25 (mV)
+	mutex_lock(&drv_state.lock);
+	for (i = 0; acpu_freq_tbl[i].acpuclk_khz; i++) {
+		if (khz == 0)
+			acpu_freq_tbl[i].vdd_sc = min(max((unsigned int)(acpu_freq_tbl[i].vdd_sc + vdd), (unsigned int)MIN_VDD_SC), (unsigned int)MAX_VDD_SC);
+		else if (acpu_freq_tbl[i].acpuclk_khz == khz)
+			acpu_freq_tbl[i].vdd_sc = min(max((unsigned int)vdd, (unsigned int)MIN_VDD_SC), (unsigned int)MAX_VDD_SC);
+	}
+	mutex_unlock(&drv_state.lock);
+}
+#endif
