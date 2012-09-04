@@ -1151,7 +1151,7 @@ CONFIG_TUN=y
 # CONFIG_NETDEV_10000 is not set
 CONFIG_WLAN=y
 # CONFIG_USB_ZD1201 is not set
-CONFIG_LIBRA_SDIOIF=m
+CONFIG_LIBRA_SDIOIF=y
 # CONFIG_BCM4329_248=m
 # CONFIG_BCM4329_SOFTAP=y
 # CONFIG_BCM4329_FW_PATH="/system/etc/firmware/fw_bcm4329.bin"
@@ -1166,7 +1166,7 @@ CONFIG_BCMDHD_NVRAM_PATH="/proc/calibration"
 #
 # Kineto GAN
 #
-CONFIG_KINETO_GAN=m
+CONFIG_KINETO_GAN=y
 
 #
 # Enable WiMAX (Networking options) to see the WiMAX drivers
@@ -1442,7 +1442,7 @@ CONFIG_SPI_QUP=y
 #
 # SPI Protocol Masters
 #
-CONFIG_SPI_SPIDEV=m
+CONFIG_SPI_SPIDEV=y
 # CONFIG_SPI_TLE62X0 is not set
 # CONFIG_SLIMBUS is not set
 CONFIG_AMP_TPA2051D3=y
