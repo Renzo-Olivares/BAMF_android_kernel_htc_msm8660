@@ -369,3 +369,4 @@ module_exit(pm8xxx_vib_exit);
 MODULE_ALIAS("platform:" PM8XXX_VIBRATOR_DEV_NAME);
 MODULE_DESCRIPTION("pm8xxx vibrator driver");
 MODULE_LICENSE("GPL v2");
+
