@@ -1265,7 +1265,7 @@ static void if_tag_stat_update(const char *ifname, uid_t uid,
 	struct data_counters *uid_tag_counters;
 	struct sock_tag *sock_tag_entry;
 	struct iface_stat *iface_entry;
-	struct tag_stat *new_tag_stat;
+	struct tag_stat *new_tag_stat = NULL;
 	MT_DEBUG("[NET] qtaguid: if_tag_stat_update(ifname=%s "
 		"uid=%u sk=%p dir=%d proto=%d bytes=%d)\n",
 		 ifname, uid, sk, direction, proto, bytes);
@@ -2783,3 +2783,4 @@ MODULE_ALIAS("ipt_owner");
 MODULE_ALIAS("ip6t_owner");
 MODULE_ALIAS("ipt_qtaguid");
 MODULE_ALIAS("ip6t_qtaguid");
+
