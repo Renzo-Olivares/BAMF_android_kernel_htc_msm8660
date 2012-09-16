@@ -14,6 +14,10 @@
 #ifndef AVS_H
 #define AVS_H
 
+#define VOLTAGE_MIN  CONFIG_CPU_FREQ_MIN_VDD /* mV */
+#define VOLTAGE_MAX  CONFIG_CPU_FREQ_MAX_VDD
+#define VOLTAGE_STEP 25
+
 int __init avs_init(int (*set_vdd)(int), u32 freq_cnt, u32 freq_idx);
 void __exit avs_exit(void);
 
