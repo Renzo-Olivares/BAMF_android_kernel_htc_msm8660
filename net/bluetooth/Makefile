@@ -5,6 +5,9 @@
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 CFLAGS_l2cap_core.o += -O2
 endif
+ifdef CONFIG_CC_OPTIMIZE_FAST
+CFLAGS_l2cap_core.o += -O2
+endif
 
 obj-$(CONFIG_BT)	+= bluetooth.o
 obj-$(CONFIG_BT_RFCOMM)	+= rfcomm/
