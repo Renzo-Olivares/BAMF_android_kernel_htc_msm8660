@@ -4,6 +4,9 @@
 ifdef CONFIG_CC_OPTIMIZE_ALOT
 CFLAGS_workqueue.o += -O2
 endif
+ifdef CONFIG_CC_OPTIMIZE_FAST
+CFLAGS_workqueue.o += -O2
+endif
 obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
 	    cpu.o exit.o itimer.o time.o softirq.o resource.o \
 	    sysctl.o sysctl_binary.o capability.o ptrace.o timer.o user.o \
