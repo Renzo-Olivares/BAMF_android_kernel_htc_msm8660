@@ -692,13 +692,13 @@ static void enable_ps_interrupt(char *ps_conf)
 static void sensor_irq_do_work(struct work_struct *work)
 {
 	struct cm3629_info *lpi = lp_info;
-	uint8_t cmd[3];
+	uint8_t cmd[3] = {0,0,0};
 	uint8_t add = 0;
 
 	/* Check ALS or PS */
 	wake_lock_timeout(&(lpi->ps_wake_lock), 3*HZ);
 	_cm3629_I2C_Read2(lpi->cm3629_slave_address, INT_FLAG, cmd, 2);
-	add = cmd[1] = 0;
+	add = cmd[1];
 	/* D("[cm3629] %s:, INTERRUPT = 0x%x \n", __func__, add); */
 	if ((add & CM3629_PS1_IF_AWAY) || (add & CM3629_PS1_IF_CLOSE) ||
 	    (add & CM3629_PS2_IF_AWAY) || (add & CM3629_PS2_IF_CLOSE)) {
