@@ -333,14 +333,14 @@ void kernel_restart_prepare(char *cmd)
  */
 void kernel_restart(char *cmd)
 {
-	kernel_restart_prepare(cmd);
-	if (!cmd)
-	disable_nonboot_cpus();
-		printk(KERN_EMERG "%s(parent:%s): Restarting system.\n", current->comm, current->parent->comm);
-	else
-		printk(KERN_EMERG "%s(parent:%s): Restarting system with command '%s'.\n", current->comm, current->parent->comm, cmd);
-	kmsg_dump(KMSG_DUMP_RESTART);
-	machine_restart(cmd);
+         kernel_restart_prepare(cmd);
+         disable_nonboot_cpus();
+         if (!cmd)
+                printk(KERN_EMERG "Restarting system.\n");
+         else
+                printk(KERN_EMERG "Restarting system with command '%s'.\n", cmd);
+         kmsg_dump(KMSG_DUMP_RESTART);
+         machine_restart(cmd);
 }
 EXPORT_SYMBOL_GPL(kernel_restart);
 
