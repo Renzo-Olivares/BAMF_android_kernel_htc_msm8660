@@ -335,6 +335,7 @@ void kernel_restart(char *cmd)
 {
 	kernel_restart_prepare(cmd);
 	if (!cmd)
+	disable_nonboot_cpus();
 		printk(KERN_EMERG "%s(parent:%s): Restarting system.\n", current->comm, current->parent->comm);
 	else
 		printk(KERN_EMERG "%s(parent:%s): Restarting system with command '%s'.\n", current->comm, current->parent->comm, cmd);
