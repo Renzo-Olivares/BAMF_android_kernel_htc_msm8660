@@ -876,11 +876,17 @@ STORE_FUNCTION(row_lp_read_quantum_store,
 			1, INT_MAX, 0);
 STORE_FUNCTION(row_lp_swrite_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_LOW_SWRITE].disp_quantum,
+<<<<<<< HEAD
 			1, INT_MAX, 0);
 STORE_FUNCTION(row_rd_idle_data_store, &rowd->rd_idle_data.idle_time_ms,
 			1, INT_MAX, 0);
 STORE_FUNCTION(row_rd_idle_data_freq_store, &rowd->rd_idle_data.freq_ms,
 			1, INT_MAX, 0);
+=======
+			1, INT_MAX, 1);
+STORE_FUNCTION(row_read_idle_store, &rowd->read_idle.idle_time, 1, INT_MAX, 1);
+STORE_FUNCTION(row_read_idle_freq_store, &rowd->read_idle.freq, 1, INT_MAX, 1);
+>>>>>>> 0a0345a... block: ROW: Correct minimum values of ROW tunable parameters
 
 #undef STORE_FUNCTION
 
