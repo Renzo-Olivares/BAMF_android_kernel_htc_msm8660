@@ -13,7 +13,6 @@
 #include <linux/interrupt.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_bus.h>
-#include <mach/socinfo.h>
 
 #include "kgsl.h"
 #include "kgsl_pwrscale.h"
@@ -25,6 +24,7 @@
 #define KGSL_PWRFLAGS_AXI_ON   2
 #define KGSL_PWRFLAGS_IRQ_ON   3
 
+#define GPU_SWFI_LATENCY	3
 #define UPDATE_BUSY_VAL		1000000
 #define UPDATE_BUSY		50
 
@@ -64,6 +64,7 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 		new_level >= pwr->thermal_pwrlevel &&
 		new_level != pwr->active_pwrlevel) {
 		struct kgsl_pwrlevel *pwrlevel = &pwr->pwrlevels[new_level];
+<<<<<<< HEAD
 		int diff = new_level - pwr->active_pwrlevel;
 		int d = (diff > 0) ? 1 : -1;
 		int level = pwr->active_pwrlevel;
@@ -78,6 +79,21 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 				clk_set_rate(pwr->grp_clks[0],
 						pwr->pwrlevels[level].gpu_freq);
 			}
+=======
+		pwr->active_pwrlevel = new_level;
+		if ((test_bit(KGSL_PWRFLAGS_CLK_ON, &pwr->power_flags)) ||
+			(device->state == KGSL_STATE_NAP)) {
+			/*
+			 * On some platforms, instability is caused on
+			 * changing clock freq when the core is busy.
+			 * Idle the gpu core before changing the clock freq.
+			 */
+			if (pwr->idle_needed == true)
+				device->ftbl->idle(device,
+						KGSL_TIMEOUT_DEFAULT);
+			clk_set_rate(pwr->grp_clks[0], pwrlevel->gpu_freq);
+		}
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 		if (test_bit(KGSL_PWRFLAGS_AXI_ON, &pwr->power_flags)) {
 			if (pwr->pcl)
 				msm_bus_scale_client_update_request(pwr->pcl,
@@ -285,7 +301,7 @@ static int kgsl_pwrctrl_gpubusy_show(struct device *dev,
 DEVICE_ATTR(gpuclk, 0644, kgsl_pwrctrl_gpuclk_show, kgsl_pwrctrl_gpuclk_store);
 DEVICE_ATTR(max_gpuclk, 0644, kgsl_pwrctrl_max_gpuclk_show,
 	kgsl_pwrctrl_max_gpuclk_store);
-DEVICE_ATTR(pwrnap, 0644, kgsl_pwrctrl_pwrnap_show, kgsl_pwrctrl_pwrnap_store);
+DEVICE_ATTR(pwrnap, 0664, kgsl_pwrctrl_pwrnap_show, kgsl_pwrctrl_pwrnap_store);
 DEVICE_ATTR(idle_timer, 0644, kgsl_pwrctrl_idle_timer_show,
 	kgsl_pwrctrl_idle_timer_store);
 DEVICE_ATTR(gpubusy, 0644, kgsl_pwrctrl_gpubusy_show,
@@ -510,6 +526,7 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	pwr->power_flags = 0;
 
 	pwr->nap_allowed = pdata->nap_allowed;
+	pwr->idle_needed = pdata->idle_needed;
 	pwr->interval_timeout = pdata->idle_timeout;
 	pwr->ebi1_clk = clk_get(&pdev->dev, "bus_clk");
 	if (IS_ERR(pwr->ebi1_clk))
@@ -745,8 +762,14 @@ _sleep(struct kgsl_device *device)
 		_sleep_accounting(device);
 		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF, KGSL_STATE_SLEEP);
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_SLEEP);
+<<<<<<< HEAD
 		if (device->idle_wakelock.name)
 			wake_unlock(&device->idle_wakelock);
+=======
+		wake_unlock(&device->idle_wakelock);
+		pm_qos_update_request(&device->pm_qos_req_dma,
+					PM_QOS_DEFAULT_VALUE);
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 		break;
 	case KGSL_STATE_SLEEP:
 	case KGSL_STATE_SLUMBER:
@@ -774,13 +797,24 @@ _slumber(struct kgsl_device *device)
 	case KGSL_STATE_SLEEP:
 		del_timer_sync(&device->idle_timer);
 		kgsl_pwrctrl_pwrlevel_change(device, KGSL_PWRLEVEL_NOMINAL);
+<<<<<<< HEAD
 		device->ftbl->suspend_context(device);
 		device->ftbl->stop(device);
 		device->pwrctrl.restore_slumber = true;
+=======
+		device->pwrctrl.restore_slumber = true;
+		device->ftbl->suspend_context(device);
+		device->ftbl->stop(device);
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 		_sleep_accounting(device);
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_SLUMBER);
 		if (device->idle_wakelock.name)
 			wake_unlock(&device->idle_wakelock);
+<<<<<<< HEAD
+=======
+		pm_qos_update_request(&device->pm_qos_req_dma,
+						PM_QOS_DEFAULT_VALUE);
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 		break;
 	case KGSL_STATE_SLUMBER:
 		break;
@@ -849,9 +883,16 @@ void kgsl_pwrctrl_wake(struct kgsl_device *device)
 		/* Re-enable HW access */
 		mod_timer(&device->idle_timer,
 				jiffies + device->pwrctrl.interval_timeout);
+<<<<<<< HEAD
 
 		if (device->idle_wakelock.name)
 			wake_lock(&device->idle_wakelock);
+=======
+		wake_lock(&device->idle_wakelock);
+		if (device->pwrctrl.restore_slumber == false)
+			pm_qos_update_request(&device->pm_qos_req_dma,
+						GPU_SWFI_LATENCY);
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	case KGSL_STATE_ACTIVE:
 		break;
 	default:
@@ -881,6 +922,7 @@ void kgsl_pwrctrl_disable(struct kgsl_device *device)
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_disable);
 
+<<<<<<< HEAD
 void kgsl_pwrctrl_stop_work(struct kgsl_device *device)
 {
 	del_timer_sync(&device->idle_timer);
@@ -891,6 +933,8 @@ void kgsl_pwrctrl_stop_work(struct kgsl_device *device)
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_stop_work);
 
+=======
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 void kgsl_pwrctrl_set_state(struct kgsl_device *device, unsigned int state)
 {
 	trace_kgsl_pwr_set_state(device, state);
