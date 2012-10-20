@@ -19,7 +19,11 @@
 #undef TRACE_INCLUDE_PATH
 #define TRACE_INCLUDE_PATH .
 #undef TRACE_INCLUDE_FILE
+<<<<<<< HEAD:drivers/gpu/msm_adreno220/adreno_a2xx_trace.h
 #define TRACE_INCLUDE_FILE ../../drivers/gpu/msm_adreno220/adreno_a2xx_trace
+=======
+#define TRACE_INCLUDE_FILE adreno_a2xx_trace
+>>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.:drivers/gpu/msm/adreno_a2xx_trace.h
 
 #include <linux/tracepoint.h>
 
