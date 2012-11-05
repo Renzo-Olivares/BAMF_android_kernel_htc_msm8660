@@ -14,8 +14,13 @@
 #ifndef AVS_H
 #define AVS_H
 
+<<<<<<< HEAD
 #define VOLTAGE_MIN  CONFIG_CPU_FREQ_MIN_VDD /* mV */
 #define VOLTAGE_MAX  CONFIG_CPU_FREQ_MAX_VDD
+=======
+#define VOLTAGE_MIN  1000 /* mV */
+#define VOLTAGE_MAX  1250
+>>>>>>> parent of 7c8d777... Add Voltage VDD.
 #define VOLTAGE_STEP 25
 
 int __init avs_init(int (*set_vdd)(int), u32 freq_cnt, u32 freq_idx);
