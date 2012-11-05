@@ -217,5 +217,25 @@ depends on X86
 source "drivers/cpufreq/Kconfig.x86"
 endmenu
 
+config VDD_USERSPACE
+	bool "VDD sysfs interface"
+	default n
+	depends on CPU_FREQ_STAT
+	help
+	  exposes the VDD table to userspace
+	  allows users to adjust voltages on the fly
+
+config CPU_FREQ_MIN_VDD
+	int "Minimum VDD (uV)"
+	default 700000
+	help
+		Minimum VDD level in uV
+		
+config CPU_FREQ_MAX_VDD
+	int "Maximum VDD (uV)"
+	default 1600000
+	help
+		Maximum VDD level in uV
+
 endif
 endmenu

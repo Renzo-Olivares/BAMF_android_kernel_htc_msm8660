@@ -45,12 +45,8 @@
 #define L_VAL_SCPLL_CAL_MIN	0x08 /* =  432 MHz with 27MHz source */
 #define L_VAL_SCPLL_CAL_MAX	0x1C /* = 1512 MHz with 27MHz source */
 
-<<<<<<< HEAD
 #define MIN_VDD_SC		CONFIG_CPU_FREQ_MIN_VDD /* uV */
 #define MAX_VDD_SC		CONFIG_CPU_FREQ_MAX_VDD /* uV */
-=======
-#define MAX_VDD_SC		1250000 /* uV */
->>>>>>> parent of 7c8d777... Add Voltage VDD.
 #define MAX_VDD_MEM		1250000 /* uV */
 #define MAX_VDD_DIG		1200000 /* uV */
 #define MAX_AXI			 310500 /* KHz */
@@ -674,7 +670,6 @@ out:
 	return rc;
 }
 
-<<<<<<< HEAD
 #ifdef CONFIG_VDD_USERSPACE
 ssize_t acpuclk_get_vdd_levels_str(char *buf)
 {
@@ -711,19 +706,6 @@ void acpuclk_set_vdd(unsigned int khz, int vdd_uv) {
 	mutex_unlock(&drv_state.lock);
 }
 #endif
-=======
-#ifdef CONFIG_PERFLOCK
-unsigned int get_max_cpu_freq(void)
-{
-	struct clkctl_acpu_speed *f;
-	for (f = acpu_freq_tbl; f->acpuclk_khz != 0; f++)
-		;
-	f--;
-	return f->acpuclk_khz;;
-}
-#endif
-
->>>>>>> parent of 7c8d777... Add Voltage VDD.
 static void __init scpll_init(int sc_pll)
 {
 	uint32_t regval;
