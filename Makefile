@@ -1,7 +1,7 @@
 VERSION = 3
 PATCHLEVEL = 0
 SUBLEVEL = 51
-EXTRAVERSION = -BAMF-Vigor-Kernel
+EXTRAVERSION = -BAMF-Vigor-Kernel-Stable
 NAME = Sneaky Weasel
 
 # *DOCUMENTATION*
