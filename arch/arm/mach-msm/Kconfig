@@ -1521,7 +1521,6 @@ config MSM_DALRPC_TEST
 	help
 	  Exercises DAL RPC calls to QDSP6.
 
-<<<<<<< HEAD
 config MSM_MPDEC
 	bool "Enable kernel based mpdecision"
 	depends on MSM_SMP
@@ -1535,11 +1534,10 @@ config CMDLINE_OPTIONS
 	default n
 	help
 	  This enables the parsing of cmdline options.
-=======
+
 config CPU_VOLTAGE_TABLE
 	bool "Enable CPU Voltage Table via sysfs for adjustements"
 	default n
->>>>>>> 24db788... board/acpuclock: add global CPU voltage table for adjustment
 
 if CPU_FREQ_MSM
 
