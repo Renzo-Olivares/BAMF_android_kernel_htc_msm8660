@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 0
-SUBLEVEL = 51
+SUBLEVEL = 52
 EXTRAVERSION = -BAMF-Vigor-Kernel-EXP-Sense
 NAME = Sneaky Weasel
 
