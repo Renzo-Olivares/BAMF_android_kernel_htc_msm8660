@@ -469,8 +469,21 @@ config TOUCHSCREEN_TNETV107X
 	  module will be called tnetv107x-ts.
 
 config TOUCHSCREEN_ATMEL_SWEEP2WAKE
-        tristate "Sweep2Wake for Atmel based touchscreens"
-        default n
+	bool "Sweep2Wake for Atmel based touchscreens"
+	depends on TOUCHSCREEN_ATMEL
+	default n
+	help
+	  This will enable sweep2wake for ATMEL touchscreen
+
+config TOUCHSCREEN_ATMEL_SWEEP2WAKE_START
+	depends on TOUCHSCREEN_ATMEL_SWEEP2WAKE
+	string "Sweep2Wake start button name"
+	default "HOME"
+
+config TOUCHSCREEN_ATMEL_SWEEP2WAKE_END
+	depends on TOUCHSCREEN_ATMEL_SWEEP2WAKE
+	string "Sweep2Wake end button name"
+	default "SEARCH"
 
 config TOUCHSCREEN_SYNAPTICS_I2C_RMI
 	tristate "Synaptics i2c touchscreen"
