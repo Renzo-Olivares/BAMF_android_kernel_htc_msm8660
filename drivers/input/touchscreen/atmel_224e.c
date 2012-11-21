@@ -1526,75 +1526,6 @@ static void multi_input_report(struct atmel_ts_data *ts)
 				1, (ts->finger_count == ++finger_report));
 #endif
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_SWEEP2WAKE
-<<<<<<< HEAD
-                        //left->right
-                        if ((ts->finger_count == 1) && (scr_suspended == true) && (s2w_switch > 0)) {
-                                prevx = 50;
-                                nextx = 300;
-                                if ((barrier[0] == true) ||
-                                   ((ts->finger_data[loop_i].x > prevx) &&
-                                    (ts->finger_data[loop_i].x < nextx) &&
-                                    (ts->finger_data[loop_i].y > 1865))) {
-                                        if ((led_exec_count == true) && (scr_on_touch == false) && (s2w_switch != 2)) {
-                                                pm8058_drvx_led_brightness_set(sweep2wake_leddev, 255);
-                                                printk(KERN_INFO "[sweep2wake]: activated button_backlight");
-                                                led_exec_count = false;
-                                        }
-                                        prevx = 300;
-                                        nextx = 680;
-                                        barrier[0] = true;
-                                        if ((barrier[1] == true) ||
-                                           ((ts->finger_data[loop_i].x > prevx) &&
-                                            (ts->finger_data[loop_i].x < nextx) &&
-                                            (ts->finger_data[loop_i].y > 1865))) {
-                                                prevx = 680;
-                                                barrier[1] = true;
-                                                if ((ts->finger_data[loop_i].x > prevx) &&
-                                                    (ts->finger_data[loop_i].y > 1865)) {
-                                                      if (ts->finger_data[loop_i].x > 840) {
-                                                                if (exec_count) {
-                                                                        printk(KERN_INFO "[sweep2wake]: ON");
-                                                                        sweep2wake_pwrtrigger();
-                                                                        exec_count = false;
-                                                                        break;
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                }
-                        //right->left
-                        } else if ((ts->finger_count == 1) && (scr_suspended == false) && (s2w_switch > 0)) {
-                                scr_on_touch=true;
-                                prevx = 950;
-                                nextx = 680;
-                                if ((barrier[0] == true) ||
-                                   ((ts->finger_data[loop_i].x < prevx) &&
-                                    (ts->finger_data[loop_i].x > nextx) &&
-                                    ( ts->finger_data[loop_i].y > 1865))) {
-                                        prevx = 680;
-                                        nextx = 340;
-                                       barrier[0] = true;
-                                        if ((barrier[1] == true) ||
-                                           ((ts->finger_data[loop_i].x < prevx) &&
-                                            (ts->finger_data[loop_i].x > nextx) &&
-                                            (ts->finger_data[loop_i].y > 1865))) {
-                                                prevx = 340;
-                                                barrier[1] = true;
-                                                if ((ts->finger_data[loop_i].x < prevx) &&
-                                                    (ts->finger_data[loop_i].y > 1865)) {
-                                                        if (ts->finger_data[loop_i].x < 330) {
-                                                                if (exec_count) {
-                                                                        printk(KERN_INFO "[sweep2wake]: OFF");
-                                                                        sweep2wake_pwrtrigger();
-                                                                        exec_count = false;
-                                                                        break;
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-=======
 //			printk(KERN_INFO "[SWEEP2WAKE_DEBUG]: TOUCH at x = %d\n", ts->finger_data[loop_i].x);
 			//left -> right
 			if ((s2w_switch > 0) && (scr_suspended == true) && (ts->finger_count == 1)) {
@@ -1649,7 +1580,6 @@ static void multi_input_report(struct atmel_ts_data *ts)
 					}
 				}
 			}
->>>>>>> 53281c7... adding Chad.Goodmans S2w /sys entry mod to sweep2wake for rezound.
 #endif
 			if (ts->debug_log_level & 0x2)
 				printk(KERN_INFO "Finger %d=> X:%d, Y:%d w:%d, z:%d, F:%d\n",
