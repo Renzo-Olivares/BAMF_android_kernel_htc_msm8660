@@ -470,7 +470,7 @@ config TOUCHSCREEN_TNETV107X
 
 config TOUCHSCREEN_ATMEL_SWEEP2WAKE
 	bool "Sweep2Wake for Atmel based touchscreens"
-	depends on TOUCHSCREEN_ATMEL
+	depends on TOUCHSCREEN_ATMEL_224E
 	default n
 	help
 	  This will enable sweep2wake for ATMEL touchscreen
