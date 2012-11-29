@@ -1720,29 +1720,6 @@ static void vigor_add_usb_devices(void)
 /*
  * =============== USB, Cable related function (END) ===============
  */
-
-#ifdef CONFIG_MSM_VPE
-static struct resource msm_vpe_resources[] = {
-	{
-		.start	= 0x05300000,
-		.end	= 0x05300000 + SZ_1M - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-	{
-		.start	= INT_VPE,
-		.end	= INT_VPE,
-		.flags	= IORESOURCE_IRQ,
-	},
-};
-
-static struct platform_device msm_vpe_device = {
-	.name = "msm_vpe",
-	.id   = 0,
-	.num_resources = ARRAY_SIZE(msm_vpe_resources),
-	.resource = msm_vpe_resources,
-};
-#endif
-
 #ifdef CONFIG_HTC_BATT8x60
 static struct htc_battery_platform_data htc_battery_pdev_data = {
 	.guage_driver = GUAGE_NONE,
@@ -1771,6 +1748,8 @@ static struct platform_device htc_battery_pdev = {
  */
 #ifdef CONFIG_MSM_CAMERA
 
+#ifdef CONFIG_S5K3H2YX
+
 static int flashlight_control(int mode)
 {
 	if (system_rev == 0) {
@@ -1784,6 +1763,7 @@ static int flashlight_control(int mode)
 #endif
 		}
 }
+#endif
 
 #ifdef CONFIG_FLASHLIGHT_AAT1271
 static void config_flashlight_gpios_aat1271(void)
@@ -1849,6 +1829,7 @@ static struct i2c_board_info vigor_flashlight_XB[] = {
 };
 #endif
 
+#ifdef CONFIG_S5K3H2YX
 static uint32_t camera_off_gpio_table[] = {
 	GPIO_CFG(VIGOR_CAM_I2C_SDA, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), /* CAM_I2C_SDA */
 	GPIO_CFG(VIGOR_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), /* CAM_I2C_SCL */
@@ -1866,56 +1847,75 @@ static uint32_t camera_on_gpio_table[] = {
 	GPIO_CFG(VIGOR_CLK_SWITCH, 0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),	/* CAM_SEL */
 	GPIO_CFG(VIGOR_CAM1_VCM_PD, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),	/* CAM1_VCM_PD */
 };
+#endif
 
-static int camera_sensor_power_enable(char *power, unsigned volt)
+#ifdef CONFIG_S5K3H2YX
+static int camera_sensor_power_enable(char *power, unsigned volt, struct regulator **sensor_power)
 {
-	struct regulator *sensor_power;
 	int rc;
 	if (power == NULL)
 		return -ENODEV;
 
-	sensor_power = regulator_get(NULL, power);
+	*sensor_power = regulator_get(NULL, power);
 	if (IS_ERR(sensor_power)) {
-		pr_err("[CAM]%s: Unable to get %s\n", __func__, power);
+		pr_err("[CAM] %s: Unable to get %s\n", __func__, power);
 		return -ENODEV;
 	}
-	rc = regulator_set_voltage(sensor_power, volt, volt);
+	rc = regulator_set_voltage(*sensor_power, volt, volt);
 	if (rc) {
-		pr_err("[CAM]%s: unable to set %s voltage to %d rc:%d\n",
+		pr_err("[CAM] %s: unable to set %s voltage to %d rc:%d\n",
 			__func__, power, volt, rc);
+		regulator_put(*sensor_power);
+		*sensor_power = NULL;
+		return -ENODEV;
 	}
-	rc = regulator_enable(sensor_power);
+	rc = regulator_enable(*sensor_power);
 	if (rc) {
-		pr_err("[CAM]%s: Enable regulator %s failed\n", __func__, power);
+		pr_err("[CAM] %s: Enable regulator %s failed\n", __func__, power);
+		regulator_put(*sensor_power);
+		*sensor_power = NULL;
 	}
-	regulator_put(sensor_power);
+
 	return rc;
 }
 
-
-static int camera_sensor_power_disable(char *power)
+static int camera_sensor_power_disable(struct regulator *sensor_power)
 {
-	struct regulator *sensor_power;
 	int rc;
-	if (power == NULL)
+	if (sensor_power == NULL)
 		return -ENODEV;
 
-	sensor_power = regulator_get(NULL, power);
 	if (IS_ERR(sensor_power)) {
-		pr_err("[CAM]%s: Unable to get %s\n", __func__, power);
+		pr_err("[CAM] %s: Invalid regulator ptr\n", __func__);
 		return -ENODEV;
 	}
 	rc = regulator_disable(sensor_power);
-	if (rc) {
-		pr_err("[CAM]%s: Enable regulator %s failed\n", __func__, power);
-	}
+	if (rc)
+		pr_err("[CAM] %s: Disable regulator failed\n", __func__);
+
 	regulator_put(sensor_power);
+	sensor_power = NULL;
 	return rc;
+
 }
 
 static struct regulator *v_camera_io;/* for XB board*/
+#endif
+
+static struct regulator *vigor_reg_8058_l10 = NULL;
+static struct regulator *vigor_reg_8058_l23 = NULL;
+static struct regulator *vigor_reg_8058_l24 = NULL;
+static struct regulator *vigor_reg_8058_l15 = NULL;
+//static struct regulator *vigor_reg_8901_lvs2 = NULL;
+//static struct regulator *vigor_reg_8901_l6 = NULL;
+static struct regulator *vigor_reg_8058_l8 = NULL;
+//static struct regulator *vigor_reg_8901_usb_otg = NULL;
+
 
 #ifdef CONFIG_S5K3H2YX
+static int vigor_config_camera_on_gpios(void);
+static void Vigor_maincam_clk_switch(void);
+
 static int first_run = 1;
 static int Vigor_s5k3h2yx_vreg_on(void)
 {
@@ -1925,7 +1925,7 @@ static int Vigor_s5k3h2yx_vreg_on(void)
 	if (first_run == 1) {
 		first_run = 0;
 		/* VCM : L10*/
-		rc = camera_sensor_power_enable("8058_l10", 2800000);
+		rc = camera_sensor_power_enable("8058_l10", 2800000, &vigor_reg_8058_l10);
 		/*pr_info("[CAM]sensor_power_enable(\"8058_l10\", 2.8V) == %d\n", rc);*/
 		udelay(50);
 	}
@@ -1934,14 +1934,14 @@ static int Vigor_s5k3h2yx_vreg_on(void)
 
 	/* VDD 1V2 : L24*/
 	if (system_rev >= 1) /* for XB board*/
-		rc = camera_sensor_power_enable("8058_l23", 1200000);
+		rc = camera_sensor_power_enable("8058_l23", 1200000, &vigor_reg_8058_l23);
 	else
-		rc = camera_sensor_power_enable("8058_l24", 1200000);
+		rc = camera_sensor_power_enable("8058_l24", 1200000, &vigor_reg_8058_l24);
 	/*pr_info("[CAM]sensor_power_enable(\"8058_l24\", 1.2V) == %d\n", rc);*/
 	udelay(50);
 
 	/* Analog : L15*/
-	rc = camera_sensor_power_enable("8058_l15", 2800000);
+	rc = camera_sensor_power_enable("8058_l15", 2800000, &vigor_reg_8058_l15);
 	/*pr_info("[CAM]sensor_power_enable(\"8058_l15\", 2.8V) == %d\n", rc);*/
 
 	udelay(50);
@@ -1960,12 +1960,17 @@ static int Vigor_s5k3h2yx_vreg_on(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_enable("8058_l8", 1800000);
+		rc = camera_sensor_power_enable("8058_l8", 1800000, &vigor_reg_8058_l8);
 		/*pr_info("[CAM] sensor_power_enable(\"8058_l8\", 1.8V) == %d\n", rc);*/
 	}
 
+	vigor_config_camera_on_gpios();
+	Vigor_maincam_clk_switch();
+
 	return rc;
 }
+
+static void vigor_config_camera_off_gpios(void);
 
 static int Vigor_s5k3h2yx_vreg_off(void)
 {
@@ -1986,28 +1991,30 @@ static int Vigor_s5k3h2yx_vreg_off(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_disable("8058_l8");
+		rc = camera_sensor_power_disable(vigor_reg_8058_l8);
 		/*pr_info("[CAM]sensor_power_disable(\"8058_l8\") == %d\n", rc);*/
 	}
 
 	/* Analog : L15*/
-	rc = camera_sensor_power_disable("8058_l15");
+	rc = camera_sensor_power_disable(vigor_reg_8058_l15);
 	/*pr_info("[CAM]sensor_power_disable(\"8058_l15\") == %d\n", rc);*/
 
 	/* VDD 1V2 : L24*/
 	if (system_rev >= 1) /* for XB board*/
-		rc = camera_sensor_power_disable("8058_l23");
+		rc = camera_sensor_power_disable(vigor_reg_8058_l23);
 	else
-		rc = camera_sensor_power_disable("8058_l24");
+		rc = camera_sensor_power_disable(vigor_reg_8058_l24);
 	/*pr_info("[CAM]sensor_power_disable(\"8058_l24\") == %d\n", rc);*/
 
 #if 0 /* L10 impact audio testing item in hboot mode */
 	/* VCM : L10*/
-	rc = camera_sensor_power_disable("8058_l10");
+	rc = camera_sensor_power_disable(vigor_reg_8058_l10);
 	pr_info("[CAM]sensor_power_disable(\"8058_l10\") == %d\n", rc);
 #else
 	gpio_set_value(VIGOR_CAM1_VCM_PD, 0); /* CAM1_VCM_PD */
 #endif
+
+	vigor_config_camera_off_gpios();
 
 	return rc;
 }
@@ -2022,13 +2029,13 @@ static int Vigor_ov8830_vreg_on(void)
 
 	/* VCM */
 #if 0
-	rc = camera_sensor_power_enable("8058_l10", 2800000);
+	rc = camera_sensor_power_enable("8058_l10", 2800000, &vigor_reg_8058_l10);
 	pr_info("[CAM] sensor_power_enable(\"8058_l10\", 2.85V) == %d\n", rc);
 #else
 	if (first_run == 1) {
 		first_run = 0;
 		/* VCM : L10*/
-		rc = camera_sensor_power_enable("8058_l10", 2800000);
+		rc = camera_sensor_power_enable("8058_l10", 2800000, &vigor_reg_8058_l10);
 		pr_info("[CAM]sensor_power_enable,1,(\"8058_l10\", 2.8V) == %d\n", rc);
 		udelay(50);
 	}
@@ -2040,7 +2047,7 @@ static int Vigor_ov8830_vreg_on(void)
 		goto init_fail;
 
 	/* analog */
-	rc = camera_sensor_power_enable("8058_l15", 2800000);
+	rc = camera_sensor_power_enable("8058_l15", 2800000, &vigor_reg_8058_l15);
 	pr_info("[CAM] sensor_power_enable(\"8058_l15\", 2.8V) == %d\n", rc);
 
 	if (rc < 0)
@@ -2073,7 +2080,7 @@ static int Vigor_ov8830_vreg_on(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_enable("8058_l8", 1800000);
+		rc = camera_sensor_power_enable("8058_l8", 1800000, &vigor_reg_8058_l8);
 		/*pr_info("[CAM] sensor_power_enable(\"8058_l8\", 1.8V) == %d\n", rc);*/
 	}
 
@@ -2108,7 +2115,7 @@ static int Vigor_ov8830_vreg_off(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_disable("8058_l8");
+		rc = camera_sensor_power_disable(vigor_reg_8058_l8);
 		/*pr_info("[CAM]sensor_power_disable(\"8058_l8\") == %d\n", rc);*/
 	}
 
@@ -2117,7 +2124,7 @@ static int Vigor_ov8830_vreg_off(void)
 		goto init_fail;
 
 	/* analog */
-	rc = camera_sensor_power_disable("8058_l15");
+	rc = camera_sensor_power_disable(vigor_reg_8058_l15);
 
 	if (rc < 0)
 		goto init_fail;
@@ -2134,7 +2141,7 @@ static int Vigor_ov8830_vreg_off(void)
 
 #if 0 /* L10 impact audio testing item in hboot mode */
 	/* VCM : L10*/
-	rc = camera_sensor_power_disable("8058_l10");
+	rc = camera_sensor_power_disable(vigor_reg_8058_l10);
 	pr_info("[CAM]sensor_power_disable(\"8058_l10\") == %d\n", rc);
 #else
 	gpio_set_value(VIGOR_CAM1_VCM_PD, 0); /* CAM1_VCM_PD */
@@ -2160,7 +2167,7 @@ static int Vigor_mt9d015_vreg_on(void)
 	if (first_run == 1) {
 		first_run = 0;
 		/* VCM : L10*/
-		rc = camera_sensor_power_enable("8058_l10", 2800000);
+		rc = camera_sensor_power_enable("8058_l10", 2800000, &vigor_reg_8058_l10);
 		/*pr_info("[CAM]sensor_power_enable(\"8058_l10\", 2.8V) == %d\n", rc);*/
 		udelay(50);
 	}
@@ -2179,18 +2186,18 @@ static int Vigor_mt9d015_vreg_on(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_enable("8058_l9", 1800000);
+		rc = camera_sensor_power_enable("8058_l9", 1800000, &vigor_reg_8058_l9);
 		/*pr_info("[CAM]sensor_power_enable(\"8058_l9\", 1.8V) == %d\n", rc);*/
 	}
 	udelay(50);
 
 	/* Analog : PM8901 L6*/
-	rc = camera_sensor_power_enable("8901_l6", 2800000);
+	rc = camera_sensor_power_enable("8901_l6", 2800000, &vigor_reg_8901_l6);
 	/*pr_info("[CAM]sensor_power_enable(\"8901_l6\", 2.8V) == %d\n", rc);*/
 	udelay(50);
 
 	/* IO : L8*/
-	rc = camera_sensor_power_enable("8058_l8", 1800000);
+	rc = camera_sensor_power_enable("8058_l8", 1800000, &vigor_reg_8058_l8);
 	/*pr_info("[CAM] sensor_power_enable(\"8058_l8\", 1.8V) == %d\n", rc);*/
 
 	return rc;
@@ -2202,11 +2209,11 @@ static int Vigor_mt9d015_vreg_off(void)
 	pr_info("[CAM]%s\n", __func__);
 
 	/* IO : L8*/
-	rc = camera_sensor_power_disable("8058_l8");
+	rc = camera_sensor_power_disable(vigor_reg_8058_l8);
 	/*pr_info("[CAM]sensor_power_disable(\"8058_l8\") == %d\n", rc);*/
 
 	/* Analog : PM8901 L6*/
-	rc = camera_sensor_power_disable("8901_l6");
+	rc = camera_sensor_power_disable(vigor_reg_8901_l6);
 	/*pr_info("[CAM]sensor_power_disable(\"8901_l6\") == %d\n", rc);*/
 
 	/* VDD 1V8 : L9*/
@@ -2223,19 +2230,13 @@ static int Vigor_mt9d015_vreg_off(void)
 			return EIO;
 		}
 	} else {
-		rc = camera_sensor_power_disable("8058_l9");
+		rc = camera_sensor_power_disable(vigor_reg_8058_l9);
 		/*pr_info("[CAM]sensor_power_disable(\"8058_l9\") == %d\n", rc);*/
 	}
 
 	return rc;
 }
 #endif
-
-static void Vigor_maincam_clk_switch(void)
-{
-	pr_info("[CAM]Doing clk switch (Main Cam)\n");
-	gpio_set_value(VIGOR_CLK_SWITCH, 0);
-}
 
 #ifdef CONFIG_MT9D015
 static void Vigor_seccam_clk_switch(void)
@@ -2246,18 +2247,219 @@ static void Vigor_seccam_clk_switch(void)
 #endif
 
 #define GPIO_CAM_EN (GPIO_EXPANDER_GPIO_BASE + 13)
+#ifdef CONFIG_S5K3H2YX
 static int vigor_config_camera_on_gpios(void)
 {
-	config_gpio_table(camera_on_gpio_table,
-		ARRAY_SIZE(camera_on_gpio_table));
-	return 0;
+        config_gpio_table(camera_on_gpio_table,
+                ARRAY_SIZE(camera_on_gpio_table));
+        return 0;
 }
 
 static void vigor_config_camera_off_gpios(void)
 {
-	config_gpio_table(camera_off_gpio_table,
-		ARRAY_SIZE(camera_off_gpio_table));
+        config_gpio_table(camera_off_gpio_table,
+                ARRAY_SIZE(camera_off_gpio_table));
 }
+
+static void Vigor_maincam_clk_switch(void)
+{
+        pr_info("[CAM]Doing clk switch (Main Cam)\n");
+        gpio_set_value(VIGOR_CLK_SWITCH, 0);
+}
+
+
+static struct msm_bus_vectors cam_init_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 0,
+		.ib  = 0,
+	},
+};
+
+static struct msm_bus_vectors cam_zsl_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 566231040,
+		.ib  = 905969664,
+	},
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 706199040,
+		.ib  = 1129918464,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 320864256,
+		.ib  = 513382810,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 320864256,
+		.ib  = 513382810,
+	},
+};
+
+static struct msm_bus_vectors cam_stereo_video_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 212336640,
+		.ib  = 339738624,
+	},
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 25090560,
+		.ib  = 40144896,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 239708160,
+		.ib  = 383533056,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 79902720,
+		.ib  = 127844352,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 0,
+		.ib  = 0,
+	},
+};
+
+static struct msm_bus_vectors cam_stereo_snapshot_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 0,
+		.ib  = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_VFE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 300902400,
+		.ib  = 481443840,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 230307840,
+		.ib  = 368492544,
+	},
+	{
+		.src = MSM_BUS_MASTER_VPE,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 245113344,
+		.ib  = 392181351,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = 106536960,
+		.ib  = 170459136,
+	},
+	{
+		.src = MSM_BUS_MASTER_JPEG_ENC,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = 106536960,
+		.ib  = 170459136,
+	},
+};
+
+static struct msm_bus_paths cam_bus_client_config[] = {
+	{
+		ARRAY_SIZE(cam_init_vectors),
+		cam_init_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_zsl_vectors),
+		cam_zsl_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_zsl_vectors),
+		cam_zsl_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_zsl_vectors),
+		cam_zsl_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_zsl_vectors),
+		cam_zsl_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_stereo_video_vectors),
+		cam_stereo_video_vectors,
+	},
+	{
+		ARRAY_SIZE(cam_stereo_snapshot_vectors),
+		cam_stereo_snapshot_vectors,
+	},
+};
+
+static struct msm_bus_scale_pdata cam_bus_client_pdata = {
+		cam_bus_client_config,
+		ARRAY_SIZE(cam_bus_client_config),
+		.name = "msm_camera",
+};
 
 static struct msm_camera_device_platform_data msm_camera_device_data = {
 	.camera_gpio_on  = vigor_config_camera_on_gpios,
@@ -2267,7 +2469,12 @@ static struct msm_camera_device_platform_data msm_camera_device_data = {
 	.ioext.csiirq = CSI_0_IRQ,
 	.ioclk.mclk_clk_rate = 24000000,
 	.ioclk.vfe_clk_rate  = 266667000,
+	.csid_core = 0,
+	.is_csic = 1,
+	.is_vpe = 1,
+	.cam_bus_scale_table = &cam_bus_client_pdata,
 };
+#endif
 
 #ifdef CONFIG_MT9D015
 static struct msm_camera_device_platform_data msm_camera_device_data_web_cam = {
@@ -2281,6 +2488,7 @@ static struct msm_camera_device_platform_data msm_camera_device_data_web_cam = {
 };
 #endif
 
+#ifdef CONFIG_S5K3H2YX
 static struct resource msm_camera_resources[] = {
 	{
 		.start	= 0x04500000,
@@ -2293,10 +2501,12 @@ static struct resource msm_camera_resources[] = {
 		.flags	= IORESOURCE_IRQ,
 	},
 };
+
 static struct msm_camera_sensor_flash_src msm_flash_src = {
 	.flash_sr_type				= MSM_CAMERA_FLASH_SRC_CURRENT_DRIVER,
 	.camera_flash				= flashlight_control,
 };
+#endif
 
 #if 0 /* HTC linear led 20111011 */
 static struct camera_flash_cfg msm_camera_sensor_flash_cfg = {
@@ -2459,12 +2669,17 @@ static struct msm_camera_sensor_flash_data flash_s5k3h2yx = {
 	.flash_src		= &msm_flash_src
 };
 
+static struct msm_camera_sensor_platform_info sensor_s5k3h2yx_board_info = {
+	.mount_angle = 90,
+	.sensor_reset_enable = 0,
+	.sensor_reset	= 0,
+	.sensor_pwd	= -1, /*RST pin does not connect to CPU*/
+	.vcm_pwd	= VIGOR_CAM1_VCM_PD,
+	.vcm_enable	= 1,
+};
+
 static struct msm_camera_sensor_info msm_camera_sensor_s5k3h2yx_data = {
 	.sensor_name	= "s5k3h2yx",
-	.sensor_reset = 0,
-	.sensor_pwd = -1, /*RST pin does not connect to CPU*/
-	.vcm_pwd = VIGOR_CAM1_VCM_PD,
-	.vcm_enable = 1,
 	.camera_pm8058_power = camera_pm8058_power,
 	.camera_power_on = Vigor_s5k3h2yx_vreg_on,
 	.camera_power_off = Vigor_s5k3h2yx_vreg_off,
@@ -2474,6 +2689,7 @@ static struct msm_camera_sensor_info msm_camera_sensor_s5k3h2yx_data = {
 	.num_resources = ARRAY_SIZE(msm_camera_resources),
 	.flash_data		= &flash_s5k3h2yx,
 	.flash_cfg = &msm_camera_sensor_s5k3h2yx_flash_cfg, /* HTC linear led 20111011 */
+	.sensor_platform_info = &sensor_s5k3h2yx_board_info,
 	.mirror_mode = 0,
 	.csi_if = 1,
 	.dev_node	= 0
@@ -2655,6 +2871,24 @@ static void __init msm8x60_init_camera(void)
 	msm_camera_sensor_webcam.name = "msm_camera_webcam";
 	msm_camera_sensor_webcam.dev.platform_data = &msm_camera_sensor_mt9d015_data;
 #endif
+	int i = 0;
+	struct platform_device *cam_dev[] = {
+#ifdef CONFIG_S5K3H2YX
+	&msm_camera_sensor_s5k3h2yx,
+#endif
+#ifdef CONFIG_MT9D015
+	&msm_camera_sensor_webcam,
+#endif
+	};
+
+	for (i = 0; i < ARRAY_SIZE(cam_dev); i++) {
+		platform_device_register(cam_dev[i]);
+	}
+
+	platform_device_register(&msm8x60_device_csic0);
+	platform_device_register(&msm8x60_device_csic1);
+	platform_device_register(&msm8x60_device_vfe);
+	platform_device_register(&msm8x60_device_vpe);
 }
 
 static struct i2c_board_info msm_camera_boardinfo[] __initdata = {
@@ -3131,6 +3365,7 @@ static void __init msm8x60_init_dsps(void)
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 #define MSM_ION_SF_SIZE       MSM_PMEM_SF_SIZE
 #define MSM_ION_ROTATOR_SIZE  MSM_PMEM_ADSP2_SIZE
+#define MSM_ION_CAMERA_SIZE   0x2000000
 #define MSM_ION_MM_FW_SIZE    0x200000  /* KERNEL_SMI_SIZE */
 #define MSM_ION_MM_SIZE       0x3D00000 /* USER_SMI_SIZE */
 #define MSM_ION_MFC_SIZE      0x100000  /* KERNEL_SMI_SIZE */
@@ -3149,7 +3384,8 @@ static void __init msm8x60_init_dsps(void)
 
 #define MSM_ION_WB_BASE       (0x80000000 - MSM_ION_WB_SIZE)
 #define MSM_ION_ROTATOR_BASE  (MSM_ION_WB_BASE - MSM_ION_ROTATOR_SIZE)
-#define MSM_ION_QSECOM_BASE   (MSM_ION_ROTATOR_BASE - MSM_ION_QSECOM_SIZE)
+#define MSM_ION_CAMERA_BASE   (MSM_ION_ROTATOR_BASE - MSM_ION_CAMERA_SIZE)
+#define MSM_ION_QSECOM_BASE   (MSM_ION_CAMERA_BASE - MSM_ION_QSECOM_SIZE)
 
 #else /* CONFIG_MSM_MULTIMEDIA_USE_ION */
 #define MSM_ION_HEAP_NUM      1
@@ -6029,6 +6265,7 @@ static void register_i2c_devices(void)
 		msm8x60_i2c_devices_cam_ov8830[0].info,
 		msm8x60_i2c_devices_cam_ov8830[0].len);
 	}
+
 	if (engineerid >= 0x2) {
 		i2c_register_board_info(MSM_GSBI12_QUP_I2C_BUS_ID,
 				i2c_CM3629_XA02_devices, ARRAY_SIZE(i2c_CM3629_XA02_devices));
@@ -7452,6 +7689,15 @@ static struct ion_platform_data ion_pdata = {
 			.extra_data = &co_ion_pdata,
 		},
 		{
+			.id	= ION_CAMERA_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_CAMERA_HEAP_NAME,
+			.base	= MSM_ION_CAMERA_BASE,
+			.size	= MSM_ION_CAMERA_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &co_ion_pdata,
+		},
+		{
 			.id	= ION_CP_WB_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CP,
 			.name	= ION_WB_HEAP_NAME,
@@ -7637,23 +7883,8 @@ static struct platform_device *vigor_devices[] __initdata = {
 	&hdmi_msm_device,
 #endif
 
-#ifdef CONFIG_MSM_CAMERA
-#ifdef CONFIG_S5K3H2YX
-	&msm_camera_sensor_s5k3h2yx,
-#endif
-#ifdef CONFIG_MT9D015
-	&msm_camera_sensor_webcam, /* for front camera */
-#endif
-#ifdef CONFIG_OV8830
-	&msm_camera_sensor_ov8830,
-#endif
-#endif
-
 #ifdef CONFIG_MSM_GEMINI
 	&msm_gemini_device,
-#endif
-#ifdef CONFIG_MSM_VPE
-	&msm_vpe_device,
 #endif
 
 #if defined(CONFIG_MSM_RPM_LOG) || defined(CONFIG_MSM_RPM_LOG_MODULE)
@@ -8005,8 +8236,6 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	if (SOCINFO_VERSION_MAJOR(socinfo_get_version()) != 1)
 		platform_add_devices(msm_footswitch_devices, msm_num_footswitch_devices);
 
-	msm8x60_init_camera();
-
 #if 0
 	/* disable uart under OS normal for MHL audio jack */
 	if ((board_build_flag() != MFG_BUILD) && !(get_kernel_flag() & BIT1))
@@ -8116,6 +8345,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	if (rc < 0)
 	printk(KERN_ERR "[HS_BOARD]Enable sddc vddp power failed\n");
 
+#ifdef CONFIG_MSM_CAMERA
+        msm8x60_init_camera();
+#endif
 }
 
 static void __init msm8x60_charm_init_early(void)

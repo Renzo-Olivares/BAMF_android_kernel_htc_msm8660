@@ -66,8 +66,20 @@ struct msm_camera_device_platform_data {
 	struct msm_camera_io_ext ioext;
 	struct msm_camera_io_clk ioclk;
 	uint8_t csid_core;
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	uint8_t is_csiphy;
+	uint8_t is_csic;
+	uint8_t is_csid;
+	uint8_t is_ispif;
+	uint8_t is_vpe;
+//HTC_START:FIXME Max_Sun
+	int (*camera_csi_on) (void);
+	int (*camera_csi_off) (void);
+//HTC_END
+#endif
 	struct msm_bus_scale_pdata *cam_bus_scale_table;
 };
+
 enum msm_camera_csi_data_format {
 	CSI_8BIT,
 	CSI_10BIT,
@@ -179,8 +191,9 @@ struct camera_flash_cfg {
 	int (*camera_flash)(int level);
 	uint16_t low_temp_limit;
 	uint16_t low_cap_limit;
+	uint16_t low_cap_limit_dual;
 	uint8_t postpone_led_mode;
-	struct camera_flash_info *flash_info;	/* HTC linear led 20111011 */
+	struct camera_flash_info *flash_info;	/* Andrew_Cheng linear led 20111205 */
 };
 
 struct msm_camera_sensor_strobe_flash_data {
@@ -207,12 +220,40 @@ struct msm_camera_rawchip_info {
 	int (*rawchip_use_ext_1v2)(void);
 };
 
+#ifdef CONFIG_MSM_CAMERA_V4L2
+struct msm_cam_clk_info {
+	const char *clk_name;
+	long clk_rate;
+};
+#endif
+
 enum msm_camera_type {
 	BACK_CAMERA_2D,
 	FRONT_CAMERA_2D,
 	BACK_CAMERA_3D,
 	BACK_CAMERA_INT_3D,
 };
+
+#ifdef CONFIG_MSM_CAMERA_V4L2
+enum camera_vreg_type {
+	REG_LDO,
+	REG_VS,
+};
+
+struct camera_vreg_t {
+	char *reg_name;
+	enum camera_vreg_type type;
+	int min_voltage;
+	int max_voltage;
+	int op_mode;
+};
+
+struct msm_gpio_set_tbl {
+	unsigned gpio;
+	unsigned long flags;
+	uint32_t delay;
+};
+#endif
 
 struct msm8960_privacy_light_cfg {
 	unsigned mpp;
@@ -235,6 +276,12 @@ struct msm_camera_sensor_platform_info {
 	int privacy_light;
 	enum sensor_flip_mirror_info mirror_flip;
 	void *privacy_light_info;
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	struct camera_vreg_t *cam_vreg;
+	int num_vreg;
+	int32_t (*ext_power_ctrl) (int enable);
+	struct msm_camera_gpio_conf *gpio_conf;
+#endif
 };
 
 struct msm_camera_gpio_conf {
@@ -242,13 +289,29 @@ struct msm_camera_gpio_conf {
 	uint8_t cam_gpiomux_conf_tbl_size;
 	uint16_t *cam_gpio_tbl;
 	uint8_t cam_gpio_tbl_size;
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	struct gpio *cam_gpio_common_tbl;
+	uint8_t cam_gpio_common_tbl_size;
+	struct gpio *cam_gpio_req_tbl;
+	uint8_t cam_gpio_req_tbl_size;
+	struct msm_gpio_set_tbl *cam_gpio_set_tbl;
+	uint8_t cam_gpio_set_tbl_size;
+#endif
 };
+
+#ifdef CONFIG_MSM_CAMERA_V4L2
+struct msm_camera_platform_info {
+	 struct msm_cam_clk_info *clk_info;
+	 int num_clks;
+};
+#endif
 
 struct msm_actuator_info {
 	struct i2c_board_info const *board_info;
 	int bus_id;
 	int vcm_pwd;
 	int vcm_enable;
+	int use_rawchip_af;
 };
 
 enum msm_camera_platform{
@@ -286,6 +349,10 @@ struct msm_camera_sensor_info {
 	int (*camera_power_off)(void);
 	int use_rawchip;
 	int (*sensor_version)(void);
+	//HTC_CAM_START chuck
+	int (*camera_main_get_probe)(void);
+	void (*camera_main_set_probe)(int);
+    //HTC_CAM_END
 #if 1 /* HTC to be removed */
 	/* HTC++ */
 	void(*camera_clk_switch)(void);
@@ -303,6 +370,8 @@ struct msm_camera_sensor_info {
 	uint32_t kpi_sensor_end;
 	uint8_t (*preview_skip_frame)(void);
 #endif
+	int sensor_lc_disable; /* S5K4E1GX: for sensor lens correction support */
+	int zero_shutter_mode; /* S5K4E1GX: for doing zero shutter lag on MIPI */
 };
 
 int  msm_get_cam_resources(struct msm_camera_sensor_info *);

@@ -82,7 +82,7 @@ struct s5k3h2yx_reg_t {
 	uint16_t full_mipi_size;
 };
 
-extern struct s5k3h2yx_reg_t s5k3h2yx_regs;
+// extern struct s5k3h2yx_reg_t s5k3h2yx_regs;
 
 #endif
 

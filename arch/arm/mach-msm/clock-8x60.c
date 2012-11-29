@@ -3682,8 +3682,15 @@ static struct clk_lookup msm_clocks_8x60[] = {
 	CLK_LOOKUP("mem_clk",		rpm_msg_ram_p_clk.c,	NULL),
 	CLK_LOOKUP("core_clk",		amp_clk.c,		NULL),
 	CLK_LOOKUP("cam_clk",		cam_clk.c,		NULL),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("csi_clk",		csi0_clk.c,		"msm_csic.0"),
+	CLK_LOOKUP("csi_clk",		csi1_clk.c,		"msm_csic.1"),
+	CLK_LOOKUP("csi_src_clk",	csi_src_clk.c,	"msm_csic.0"),
+	CLK_LOOKUP("csi_src_clk",	csi_src_clk.c,	"msm_csic.1"),
+#else
 	CLK_LOOKUP("csi_clk",		csi0_clk.c,		NULL),
-	CLK_LOOKUP("csi_clk",		csi1_clk.c, WEBCAM_DEV),
+	CLK_LOOKUP("csi_clk",		csi1_clk.c,		WEBCAM_DEV),
+#endif
 	CLK_LOOKUP("csi_src_clk",	csi_src_clk.c,		NULL),
 	CLK_LOOKUP("dsi_byte_div_clk",	dsi_byte_clk.c,		NULL),
 	CLK_LOOKUP("dsi_esc_clk",	dsi_esc_clk.c,		NULL),
@@ -3711,11 +3718,21 @@ static struct clk_lookup msm_clocks_8x60[] = {
 	CLK_LOOKUP("hdmi_clk",		hdmi_tv_clk.c,		NULL),
 	CLK_LOOKUP("tv_src_clk",	tv_src_clk.c,		NULL),
 	CLK_LOOKUP("hdmi_app_clk",	hdmi_app_clk.c,		NULL),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("vpe_clk",		vpe_clk.c,		"msm_vpe.0"),
+#else
 	CLK_LOOKUP("vpe_clk",		vpe_clk.c,		NULL),
+#endif
 	CLK_LOOKUP("core_clk",		vpe_clk.c,	"footswitch-8x60.9"),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("csi0_vfe_clk",	csi0_vfe_clk.c,		"msm_vfe.0"),
+	CLK_LOOKUP("csi1_vfe_clk",	csi1_vfe_clk.c,		"msm_vfe.0"),
+	CLK_LOOKUP("vfe_clk",		vfe_clk.c,		"msm_vfe.0"),
+#else
 	CLK_LOOKUP("csi_vfe_clk",	csi0_vfe_clk.c,		NULL),
 	CLK_LOOKUP("csi_vfe_clk",	csi1_vfe_clk.c, WEBCAM_DEV),
 	CLK_LOOKUP("vfe_clk",		vfe_clk.c,		NULL),
+#endif
 	CLK_LOOKUP("core_clk",		vfe_clk.c,	"footswitch-8x60.8"),
 	CLK_LOOKUP("smmu_jpegd_clk",	jpegd_axi_clk.c,		NULL),
 	CLK_LOOKUP("smmu_vfe_clk",	vfe_axi_clk.c,		NULL),
@@ -3727,8 +3744,13 @@ static struct clk_lookup msm_clocks_8x60[] = {
 	CLK_LOOKUP("bus_clk",		vcodec_axi_clk.c, "footswitch-8x60.7"),
 	CLK_LOOKUP("bus_clk",		vpe_axi_clk.c,	 "footswitch-8x60.9"),
 	CLK_LOOKUP("amp_pclk",		amp_p_clk.c,		NULL),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("csi_pclk",		csi0_p_clk.c,		"msm_csic.0"),
+	CLK_LOOKUP("csi_pclk",		csi1_p_clk.c,		"msm_csic.1"),
+#else
 	CLK_LOOKUP("csi_pclk",		csi0_p_clk.c,		NULL),
-	CLK_LOOKUP("csi_pclk",		csi1_p_clk.c, WEBCAM_DEV),
+	CLK_LOOKUP("csi_pclk",		csi1_p_clk.c,		WEBCAM_DEV),
+#endif
 	CLK_LOOKUP("dsi_m_pclk",	dsi_m_p_clk.c,		NULL),
 	CLK_LOOKUP("dsi_s_pclk",	dsi_s_p_clk.c,		NULL),
 	CLK_LOOKUP("iface_clk",		gfx2d0_p_clk.c,	"kgsl-2d0.0"),
@@ -3751,9 +3773,17 @@ static struct clk_lookup msm_clocks_8x60[] = {
 	CLK_LOOKUP("tv_enc_pclk",	tv_enc_p_clk.c,		NULL),
 	CLK_LOOKUP("iface_clk",		vcodec_p_clk.c,	"msm_vidc.0"),
 	CLK_LOOKUP("iface_clk",		vcodec_p_clk.c, "footswitch-8x60.7"),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("vfe_pclk",		vfe_p_clk.c,		"msm_vfe.0"),
+#else
 	CLK_LOOKUP("vfe_pclk",		vfe_p_clk.c,		NULL),
+#endif
 	CLK_LOOKUP("iface_clk",		vfe_p_clk.c,	"footswitch-8x60.8"),
+#ifdef CONFIG_MSM_CAMERA_V4L2
+	CLK_LOOKUP("vpe_pclk",		vpe_p_clk.c,		"msm_vpe.0"),
+#else
 	CLK_LOOKUP("vpe_pclk",		vpe_p_clk.c,		NULL),
+#endif
 	CLK_LOOKUP("iface_clk",		vpe_p_clk.c,	"footswitch-8x60.9"),
 	CLK_LOOKUP("mi2s_osr_clk",	mi2s_osr_clk.c,		NULL),
 	CLK_LOOKUP("mi2s_bit_clk",	mi2s_bit_clk.c,		NULL),
