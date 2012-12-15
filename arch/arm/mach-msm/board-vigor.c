@@ -1907,11 +1907,8 @@ static struct regulator *vigor_reg_8058_l23 = NULL;
 static struct regulator *vigor_reg_8058_l24 = NULL;
 static struct regulator *vigor_reg_8058_l15 = NULL;
 //static struct regulator *vigor_reg_8901_lvs2 = NULL;
-static struct regulator *vigor_reg_8901_l6 = NULL;
 static struct regulator *vigor_reg_8058_l8 = NULL;
 //static struct regulator *vigor_reg_8901_usb_otg = NULL;
-static struct regulator *vigor_reg_8058_l9 = NULL;
-
 
 #ifdef CONFIG_S5K3H2YX
 static int vigor_config_camera_on_gpios(void);
@@ -2157,6 +2154,9 @@ init_fail:
 
 /* mt9d015 power */
 #ifdef CONFIG_MT9D015
+static struct regulator *vigor_reg_8901_l6 = NULL;
+static struct regulator *vigor_reg_8058_l9 = NULL;
+
 static void Vigor_seccam_clk_switch(void);
 
 static int Vigor_mt9d015_vreg_on(void)
