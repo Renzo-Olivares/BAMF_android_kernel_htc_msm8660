@@ -358,7 +358,7 @@ config OV8830
 
 config MT9D015
 	bool "Sensor mt9d015 (Aptina 2M)"
-	depends on MSM_CAMERA && ARCH_MSM8X60 && !MSM_CAMERA_V4L2
+	depends on MSM_CAMERA && ARCH_MSM8X60
 	default n
 	---help---
 	  Aptina 2M with Autofocus

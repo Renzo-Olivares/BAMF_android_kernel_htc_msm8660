@@ -53,7 +53,7 @@ endif
 
 
 ifeq ($(CONFIG_MSM_CAMERA_V4L2),y)
-  obj-$(CONFIG_ARCH_MSM8X60) += msm_io_8x60_v4l2.o msm_vfe31_v4l2.o msm_vpe_8x60_v4l2.o
+obj-$(CONFIG_ARCH_MSM8X60) += msm_io_8x60_v4l2.o msm_vfe31_v4l2.o msm_vpe_8x60_v4l2.o
 else
 ifdef CONFIG_CAMERA_ZSL
 	obj-$(CONFIG_ARCH_MSM8X60) += msm_io_8x60.o msm_vfe_8x60_ZSL.o msm_vpe1_8x60.o

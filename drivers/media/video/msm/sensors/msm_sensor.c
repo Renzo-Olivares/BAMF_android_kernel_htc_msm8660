@@ -582,7 +582,7 @@ int32_t msm_sensor_power_up(const struct msm_camera_sensor_info *data)
 			if (data->camera_pm8058_power(1) < 0)
 		                pr_err("%s: pm8058 power up fail", __func__);
 		mdelay(1);
-		gpio = data->sensor_platform_info->vcm_pwd;
+//		gpio = data->sensor_platform_info->vcm_pwd;
 	}
 
 	rc = gpio_request(gpio, "SENSOR_NAME");
@@ -690,7 +690,7 @@ int32_t msm_sensor_power_down(const struct msm_camera_sensor_info *data)
 			if (data->camera_pm8058_power(0) < 0)
                                 pr_err("%s: pm8058 power down fail", __func__);
 		mdelay(1);
-                gpio = data->sensor_platform_info->vcm_pwd;
+//                gpio = data->sensor_platform_info->vcm_pwd;
         }
 
 

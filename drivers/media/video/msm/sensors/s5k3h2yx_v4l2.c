@@ -550,7 +550,7 @@ static struct msm_camera_i2c_reg_conf s5k3h2yx_recommend_settings[] = {
 
 static struct v4l2_subdev_info s5k3h2yx_subdev_info[] = {
 	{
-	.code   = V4L2_MBUS_FMT_SBGGR10_1X10,
+        .code   = V4L2_MBUS_FMT_SBGGR10_1X10,
 	.colorspace = V4L2_COLORSPACE_JPEG,
 	.fmt    = 1,
 	.order    = 0,
@@ -804,7 +804,8 @@ static struct msm_sensor_id_info_t s5k3h2yx_id_info = {
 static struct msm_sensor_exp_gain_info_t s5k3h2yx_exp_gain_info = {
 	.coarse_int_time_addr = 0x202,
 	.global_gain_addr = 0x204,
-	.vert_offset = 16,
+//	.vert_offset = 16,
+	.vert_offset = 4,
 	.min_vert = 4, /* min coarse integration time */ /* HTC Angie 20111019 - Fix FPS */
 	.sensor_max_linecount = 65519, /* sensor max linecount = max unsigned value of linecount register size - vert_offset */ /* HTC ben 20120229 */
 };
