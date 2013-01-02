@@ -698,10 +698,6 @@ end:
 
 int adreno_postmortem_dump(struct kgsl_device *device, int manual)
 {
-<<<<<<< HEAD
-=======
-	bool saved_nap;
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 
 	BUG_ON(device == NULL);
@@ -723,8 +719,6 @@ int adreno_postmortem_dump(struct kgsl_device *device, int manual)
 	}
 	KGSL_LOG_DUMP(device, "POWER: FLAGS = %08lX | ACTIVE POWERLEVEL = %08X",
 			pwr->power_flags, pwr->active_pwrlevel);
-<<<<<<< HEAD
-=======
 
 	KGSL_LOG_DUMP(device, "POWER: INTERVAL TIMEOUT = %08X ",
 		pwr->interval_timeout);
@@ -735,34 +729,18 @@ int adreno_postmortem_dump(struct kgsl_device *device, int manual)
 	KGSL_LOG_DUMP(device, "BUS CLK = %lu ",
 		kgsl_get_clkrate(pwr->ebi1_clk));
 
-	/* Disable the idle timer so we don't get interrupted */
-	del_timer_sync(&device->idle_timer);
-	mutex_unlock(&device->mutex);
-	flush_workqueue(device->work_queue);
-	mutex_lock(&device->mutex);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
-
-	KGSL_LOG_DUMP(device, "POWER: INTERVAL TIMEOUT = %08X ",
-		pwr->interval_timeout);
-
-	KGSL_LOG_DUMP(device, "GRP_CLK = %lu ",
-				  kgsl_get_clkrate(pwr->grp_clks[0]));
-
-	KGSL_LOG_DUMP(device, "BUS CLK = %lu ",
-		kgsl_get_clkrate(pwr->ebi1_clk));
-
-<<<<<<< HEAD
 	/*
 	 * Disable the irq, idle timer, and workqueue so we don't
 	 * get interrupted
 	 */
 	kgsl_pwrctrl_stop_work(device);
+        mutex_unlock(&device->mutex);	
+        flush_workqueue(device->work_queue);	
+        mutex_lock(&device->mutex);
 
 	/* Force on the clocks */
 	kgsl_pwrctrl_wake(device);
 
-=======
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	adreno_dump(device);
 
 	/* On a manual trigger, turn on the interrupts and put
