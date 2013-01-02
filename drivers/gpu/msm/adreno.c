@@ -505,12 +505,8 @@ static int adreno_start(struct kgsl_device *device, unsigned int init_ram)
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	int init_reftimestamp = 0x7fffffff;
 
-<<<<<<< HEAD
-	kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);
-=======
 	if (KGSL_STATE_DUMP_AND_RECOVER != device->state)
-		kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
+		kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);.
 
 	/* Power up the device */
 	kgsl_pwrctrl_enable(device);
@@ -725,22 +721,6 @@ adreno_recover_hang(struct kgsl_device *device,
 done:
 	kgsl_sharedmem_writel(&device->memstore,
 			KGSL_DEVICE_MEMSTORE_OFFSET(eoptimestamp),
-<<<<<<< HEAD
-			eoptimestamp);
-
-	if (num_rb_contents) {
-		kgsl_sharedmem_writel(&device->memstore,
-			KGSL_DEVICE_MEMSTORE_OFFSET(ref_wait_ts),
-			reftimestamp);
-		kgsl_sharedmem_writel(&device->memstore,
-			KGSL_DEVICE_MEMSTORE_OFFSET(ts_cmp_enable),
-			enable_ts);
-	}
-	/* Make sure all writes are posted before the GPU reads them */
-	wmb();
-	/* Mark the invalid context so no more commands are accepted from
-	 * that context */
-=======
 			rb->timestamp);
 	adreno_mark_context_status(device, ret);
 	return ret;
@@ -751,7 +731,6 @@ static void adreno_destroy_recovery_data(struct adreno_recovery_data *rec_data)
 	vfree(rec_data->rb_buffer);
 	vfree(rec_data->bad_rb_buffer);
 }
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 
 static int adreno_setup_recovery_data(struct kgsl_device *device,
 					struct adreno_recovery_data *rec_data)
@@ -823,13 +802,6 @@ int adreno_dump_and_recover(struct kgsl_device *device)
 		 * the console
 		 */
 		adreno_postmortem_dump(device, 0);
-<<<<<<< HEAD
-		result = adreno_recover_hang(device);
-		if (result)
-			kgsl_pwrctrl_set_state(device, KGSL_STATE_HUNG);
-		else
-			kgsl_pwrctrl_set_state(device, KGSL_STATE_ACTIVE);
-=======
 
 		/*
 		 * Make a GPU snapshot.  For now, do it after the PM dump so we
@@ -845,7 +817,6 @@ int adreno_dump_and_recover(struct kgsl_device *device)
 			kgsl_pwrctrl_set_state(device, KGSL_STATE_ACTIVE);
 			mod_timer(&device->idle_timer, jiffies + FIRST_TIMEOUT);
 		}
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 		complete_all(&device->recovery_gate);
 	}
 done:
@@ -979,10 +950,6 @@ int adreno_idle(struct kgsl_device *device, unsigned int timeout)
 	 */
 retry:
 	if (rb->flags & KGSL_FLAGS_STARTED) {
-<<<<<<< HEAD
-		adreno_poke(device);
-		do {
-=======
 		msecs = adreno_dev->wait_timeout;
 		msecs_first = (msecs <= 100) ? ((msecs + 4) / 5) : 100;
 		msecs_part = (msecs - msecs_first + 3) / 4;
@@ -995,7 +962,6 @@ retry:
 				wait_time_part = jiffies +
 					msecs_to_jiffies(msecs_part);
 			}
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 			GSL_RB_GET_READPTR(rb, &rb->rptr);
 			if (time_after(jiffies, wait_time)) {
 				KGSL_DRV_ERR(device, "rptr: %x, wptr: %x\n",
