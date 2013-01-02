@@ -25,11 +25,7 @@
 
 #define KGSL_NAME "kgsl"
 
-<<<<<<< HEAD
 /* Timestamp window used to detect rollovers */
-=======
-/* Timestamp window used to detect rollovers (half of integer range) */
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 #define KGSL_TIMESTAMP_WINDOW 0x80000000
 
 /*cache coherency ops */
@@ -221,9 +217,6 @@ static inline int timestamp_cmp(unsigned int a, unsigned int b)
 	if (a == b)
 		return 0;
 
-<<<<<<< HEAD
-	return ((ts_diff > 0) || (ts_diff < -KGSL_TIMESTAMP_WINDOW)) ? 1 : -1;
-=======
 	/* check for greater-than for non-rollover case */
 	if ((a > b) && (a - b < KGSL_TIMESTAMP_WINDOW))
 		return 1;
@@ -236,7 +229,6 @@ static inline int timestamp_cmp(unsigned int a, unsigned int b)
 	a += KGSL_TIMESTAMP_WINDOW;
 	b += KGSL_TIMESTAMP_WINDOW;
 	return ((a > b) && (a - b <= KGSL_TIMESTAMP_WINDOW)) ? 1 : -1;
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 }
 
 static inline void

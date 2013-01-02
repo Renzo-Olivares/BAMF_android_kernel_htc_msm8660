@@ -151,7 +151,6 @@ static void idlestats_sleep(struct kgsl_device *device,
 	struct idlestats_priv *priv = pwrscale->priv;
 	msm_idle_stats_update_event(&priv->idledev,
 		MSM_IDLE_STATS_EVENT_IDLE_TIMER_EXPIRED);
-<<<<<<< HEAD
 }
 
 static void idlestats_wake(struct kgsl_device *device,
@@ -160,8 +159,6 @@ static void idlestats_wake(struct kgsl_device *device,
 	/* Use highest perf level on wake-up from
 	   sleep for better performance */
 	kgsl_pwrctrl_pwrlevel_change(device, KGSL_PWRLEVEL_TURBO);
-=======
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 }
 
 static int idlestats_init(struct kgsl_device *device,

@@ -360,14 +360,8 @@ int adreno_ringbuffer_start(struct adreno_ringbuffer *rb, unsigned int init_ram)
 
 	/* update the eoptimestamp field with the last retired timestamp */
 	kgsl_sharedmem_writel(&device->memstore,
-<<<<<<< HEAD
 			KGSL_DEVICE_MEMSTORE_OFFSET(eoptimestamp),
-			rb->timestamp);
-=======
-			     KGSL_DEVICE_MEMSTORE_OFFSET(eoptimestamp),
-			     rb->timestamp);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
-
+			rb->timestamp);.
 	/* load the CP ucode */
 
 	status = adreno_ringbuffer_load_pm4_ucode(device);
