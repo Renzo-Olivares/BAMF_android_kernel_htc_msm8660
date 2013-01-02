@@ -38,10 +38,7 @@
 #include <linux/suspend.h>
 #include <linux/earlysuspend.h>
 #include <mach/rpm.h>
-<<<<<<< HEAD
-=======
 #include <linux/fastchg.h>
->>>>>>> 1c5fbee... USB forced fast charge
 
 #define BATT_SUSPEND_CHECK_TIME			3600
 #define BATT_TIMER_CHECK_TIME			360
