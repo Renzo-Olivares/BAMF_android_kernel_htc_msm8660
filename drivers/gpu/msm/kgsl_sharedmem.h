@@ -85,8 +85,7 @@ static inline unsigned int kgsl_get_sg_pa(struct scatterlist *sg)
 	return pa;
 }
 
-<<<<<<< HEAD
-=======
+
 int
 kgsl_sharedmem_map_vma(struct vm_area_struct *vma,
 			const struct kgsl_memdesc *memdesc);
@@ -114,20 +113,11 @@ static inline void kgsl_sg_free(void *ptr, unsigned int sglen)
 		vfree(ptr);
 }
 
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 static inline int
 memdesc_sg_phys(struct kgsl_memdesc *memdesc,
 		unsigned int physaddr, unsigned int size)
 {
-<<<<<<< HEAD
-	memdesc->sg = vmalloc(sizeof(struct scatterlist) * 1);
-	if (memdesc->sg == NULL)
-		return -ENOMEM;
-=======
-	memdesc->sg = kgsl_sg_alloc(1);
-
-	kmemleak_not_leak(memdesc->sg);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
+  memdesc->sg = kgsl_sg_alloc(1);
 
 	kmemleak_not_leak(memdesc->sg);
 
