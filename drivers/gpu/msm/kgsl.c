@@ -411,7 +411,6 @@ static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 		mutex_lock(&device->mutex);
 	}
 	switch (device->state) {
-<<<<<<< HEAD
 	case KGSL_STATE_INIT:
 		break;
 	case KGSL_STATE_ACTIVE:
@@ -434,33 +433,6 @@ static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 		KGSL_PWR_ERR(device, "suspend fail, device %d\n",
 				device->id);
 		goto end;
-=======
-		case KGSL_STATE_INIT:
-			break;
-		case KGSL_STATE_ACTIVE:
-			/* Wait for the device to become idle */
-			device->ftbl->idle(device, KGSL_TIMEOUT_DEFAULT);
-		case KGSL_STATE_NAP:
-		case KGSL_STATE_SLEEP:
-			/* Get the completion ready to be waited upon. */
-			INIT_COMPLETION(device->hwaccess_gate);
-			device->ftbl->suspend_context(device);
-			device->ftbl->stop(device);
-			if (device->idle_wakelock.name)
-				wake_unlock(&device->idle_wakelock);
-			pm_qos_update_request(&device->pm_qos_req_dma,
-						PM_QOS_DEFAULT_VALUE);
-			kgsl_pwrctrl_set_state(device, KGSL_STATE_SUSPEND);
-			break;
-		case KGSL_STATE_SLUMBER:
-			INIT_COMPLETION(device->hwaccess_gate);
-			kgsl_pwrctrl_set_state(device, KGSL_STATE_SUSPEND);
-			break;
-		default:
-			KGSL_PWR_ERR(device, "suspend fail, device %d\n",
-					device->id);
-			goto end;
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	}
 	kgsl_pwrctrl_request_state(device, KGSL_STATE_NONE);
 	device->pwrctrl.nap_allowed = nap_allowed_saved;
@@ -532,10 +504,7 @@ void kgsl_early_suspend_driver(struct early_suspend *h)
 					struct kgsl_device, display_off);
 	KGSL_PWR_WARN(device, "early suspend start\n");
 	mutex_lock(&device->mutex);
-<<<<<<< HEAD
 	kgsl_pwrctrl_stop_work(device);
-=======
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	kgsl_pwrctrl_request_state(device, KGSL_STATE_SLUMBER);
 	kgsl_pwrctrl_sleep(device);
 	mutex_unlock(&device->mutex);
@@ -565,10 +534,7 @@ void kgsl_late_resume_driver(struct early_suspend *h)
 	KGSL_PWR_WARN(device, "late resume start\n");
 	mutex_lock(&device->mutex);
 	device->pwrctrl.restore_slumber = 0;
-<<<<<<< HEAD
-=======
-	kgsl_pwrctrl_wake(device);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
+        kgsl_pwrctrl_wake(device);
 	kgsl_pwrctrl_pwrlevel_change(device, KGSL_PWRLEVEL_TURBO);
 	mutex_unlock(&device->mutex);
 	kgsl_check_idle(device);
@@ -1350,12 +1316,8 @@ static int memdesc_sg_virt(struct kgsl_memdesc *memdesc,
 	int sglen = PAGE_ALIGN(size) / PAGE_SIZE;
 	unsigned long paddr = (unsigned long) addr;
 
-<<<<<<< HEAD
-	memdesc->sg = vmalloc(sglen * sizeof(struct scatterlist));
-=======
 	memdesc->sg = kgsl_sg_alloc(sglen);
 
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	if (memdesc->sg == NULL)
 		return -ENOMEM;
 
@@ -1395,11 +1357,7 @@ static int memdesc_sg_virt(struct kgsl_memdesc *memdesc,
 
 err:
 	spin_unlock(&current->mm->page_table_lock);
-<<<<<<< HEAD
-	vfree(memdesc->sg);
-=======
 	kgsl_sg_free(memdesc->sg,  sglen);
->>>>>>> 5e8ecbc... Update kgsl drivers to jb_chocolate.
 	memdesc->sg = NULL;
 
 	return -EINVAL;
