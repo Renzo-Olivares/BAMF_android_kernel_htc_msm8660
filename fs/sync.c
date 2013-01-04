@@ -173,13 +173,8 @@ SYSCALL_DEFINE1(syncfs, int, fd)
  * written.
  */
 int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
-{	
-
-#ifdef CONFIG_FSYNC_CONTROL	
-  if (!fsynccontrol_fsync_enabled())
-    return 0;
-#endif	
-
+{
+<<<<<<< HEAD
 	struct address_space *mapping = file->f_mapping;
 	int err, ret;
 
@@ -202,6 +197,17 @@ int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
 
 out:
 	return ret;
+=======
+
+#ifdef CONFIG_FSYNC_CONTROL
+	if (!fsynccontrol_fsync_enabled())
+		return 0;
+#endif
+
+	if (!file->f_op || !file->f_op->fsync)
+		return -EINVAL;
+	return file->f_op->fsync(file, start, end, datasync);
+>>>>>>> 90eca00... Added FSync Control version 1
 }
 EXPORT_SYMBOL(vfs_fsync_range);
 
