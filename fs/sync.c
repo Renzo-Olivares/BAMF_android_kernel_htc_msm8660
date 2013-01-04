@@ -173,15 +173,14 @@ SYSCALL_DEFINE1(syncfs, int, fd)
  * written.
  */
 int vfs_fsync_range(struct file *file, loff_t start, loff_t end, int datasync)
-{	
-
-#ifdef CONFIG_FSYNC_CONTROL	
-  if (!fsynccontrol_fsync_enabled())
-    return 0;
-#endif	
-
+{
 	struct address_space *mapping = file->f_mapping;
 	int err, ret;
+
+#ifdef CONFIG_FSYNC_CONTROL	
+  if (!fsynccontrol_fsync_enabled())	
+      return 0;
+#endif
 
 	if (!file->f_op || !file->f_op->fsync) {
 		ret = -EINVAL;
