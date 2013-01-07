@@ -68,13 +68,6 @@ obj-$(CONFIG_PMIC8058_MISC) += pmic8058-misc.o
 obj-$(CONFIG_PMIC8058_BATTALARM) += pmic8058-batt-alarm.o
 obj-$(CONFIG_TZCOM) += tzcom.o
 
-<<<<<<< HEAD
 obj-$(CONFIG_CABLE_DETECT_8X60) += cable_detect.o
 obj-$(CONFIG_CABLE_DETECT_8960) += cable_detect_8960.o
 obj-$(CONFIG_CABLE_DETECT_8X55) += cable_detect_8x55.o
-=======
-obj-$(CONFIG_TEGRA_CRYPTO_DEV)	+= tegra-cryptodev.o
-obj-$(CONFIG_TEGRA_BB_SUPPORT)	+= tegra-baseband/
-obj-$(CONFIG_MAX1749_VIBRATOR)	+= max1749.o
-obj-$(CONFIG_FSYNC_CONTROL)  += fsync_control.o
->>>>>>> 90eca00... Added FSync Control version 1
