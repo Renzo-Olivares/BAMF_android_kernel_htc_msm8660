@@ -13,8 +13,6 @@
 #include <linux/vmalloc.h>
 #include <linux/memory_alloc.h>
 #include <asm/cacheflush.h>
-#include <linux/slab.h>
-#include <linux/kmemleak.h>
 
 #include "kgsl.h"
 #include "kgsl_sharedmem.h"
@@ -429,8 +427,6 @@ _kgsl_sharedmem_vmalloc(struct kgsl_memdesc *memdesc,
 		goto done;
 	}
 
-	kmemleak_not_leak(memdesc->sg);
-
 	memdesc->sglen = sglen;
 	sg_init_table(memdesc->sg, sglen);
 
@@ -504,8 +500,6 @@ kgsl_sharedmem_vmalloc_user(struct kgsl_memdesc *memdesc,
 			      size, kgsl_driver.stats.vmalloc);
 		return -ENOMEM;
 	}
-
-	kmemleak_not_leak(ptr);
 
 	protflags = GSL_PT_PAGE_RV;
 	if (!(flags & KGSL_MEMFLAGS_GPUREADONLY))
