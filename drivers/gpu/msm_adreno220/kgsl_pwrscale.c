@@ -224,8 +224,7 @@ EXPORT_SYMBOL(kgsl_pwrscale_wake);
 void kgsl_pwrscale_busy(struct kgsl_device *device)
 {
 	if (device->pwrscale.policy && device->pwrscale.policy->busy)
-		if ((!device->pwrscale.gpu_busy) &&
-			(device->requested_state != KGSL_STATE_SLUMBER))
+		if (!device->pwrscale.gpu_busy)
 			device->pwrscale.policy->busy(device,
 					&device->pwrscale);
 	device->pwrscale.gpu_busy = 1;
@@ -234,10 +233,7 @@ void kgsl_pwrscale_busy(struct kgsl_device *device)
 void kgsl_pwrscale_idle(struct kgsl_device *device)
 {
 	if (device->pwrscale.policy && device->pwrscale.policy->idle)
-		if (device->requested_state !=
-			(KGSL_STATE_SLUMBER | KGSL_STATE_SLEEP))
-			device->pwrscale.policy->idle(device,
-					&device->pwrscale);
+		device->pwrscale.policy->idle(device, &device->pwrscale);
 	device->pwrscale.gpu_busy = 0;
 }
 EXPORT_SYMBOL(kgsl_pwrscale_idle);
