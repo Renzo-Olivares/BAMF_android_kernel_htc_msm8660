@@ -582,12 +582,7 @@ kgsl_mmu_unmap(struct kgsl_pagetable *pagetable,
 		return 0;
 
 	if (kgsl_mmu_type == KGSL_MMU_TYPE_NONE) {
-		/*
-		 * Don't clear the gpuaddr on global mappings because they
-		 * may be in use by other pagetables
-		 */
-		if (!(memdesc->priv & KGSL_MEMFLAGS_GLOBAL))
-			memdesc->gpuaddr = 0;
+		memdesc->gpuaddr = 0;
 		return 0;
 	}
 	spin_lock(&pagetable->lock);
@@ -633,7 +628,6 @@ int kgsl_mmu_map_global(struct kgsl_pagetable *pagetable,
 			gpuaddr, memdesc->gpuaddr);
 		goto error_unmap;
 	}
-	memdesc->priv |= KGSL_MEMFLAGS_GLOBAL;
 	return result;
 error_unmap:
 	kgsl_mmu_unmap(pagetable, memdesc);
