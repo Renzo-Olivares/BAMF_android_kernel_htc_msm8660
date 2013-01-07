@@ -250,7 +250,7 @@ static irqreturn_t z180_isr(int irq, void *data)
 
 	if ((device->pwrctrl.nap_allowed == true) &&
 		(device->requested_state == KGSL_STATE_NONE)) {
-		kgsl_pwrctrl_request_state(device, KGSL_STATE_NAP);
+		device->requested_state = KGSL_STATE_NAP;
 		queue_work(device->work_queue, &device->idle_check_ws);
 	}
 	mod_timer(&device->idle_timer,
@@ -555,7 +555,9 @@ static int z180_start(struct kgsl_device *device, unsigned int init_ram)
 {
 	int status = 0;
 
-	kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);
+	device->state = KGSL_STATE_INIT;
+	device->requested_state = KGSL_STATE_NONE;
+	KGSL_PWR_WARN(device, "state -> INIT, device %d\n", device->id);
 
 	kgsl_pwrctrl_enable(device);
 
@@ -845,7 +847,10 @@ static int z180_wait(struct kgsl_device *device,
 		status = 0;
 	else if (timeout == 0) {
 		status = -ETIMEDOUT;
-		kgsl_pwrctrl_set_state(device, KGSL_STATE_HUNG);
+		device->state = KGSL_STATE_HUNG;
+		KGSL_DRV_ERR(device, "state -> HUNG, device %d\n", device->id);
+		pr_err("%s: kgsl 2D core hung param:(%d/%d, %d)\n",
+		    __func__, timestamp, ts_processed, msecs);
 	} else
 		status = timeout;
 
