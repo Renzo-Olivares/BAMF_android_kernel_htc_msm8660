@@ -1,6 +1,10 @@
 VERSION = 3
 PATCHLEVEL = 0
+<<<<<<< HEAD
 SUBLEVEL = 57
+=======
+SUBLEVEL = 51
+>>>>>>> parent of b691704... 3.0.52 update from kernel.org
 EXTRAVERSION = -BAMF-Vigor-Kernel-EXP-Sense
 NAME = Sneaky Weasel
 
