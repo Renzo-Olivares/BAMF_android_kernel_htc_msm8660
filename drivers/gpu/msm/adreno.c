@@ -506,7 +506,7 @@ static int adreno_start(struct kgsl_device *device, unsigned int init_ram)
 	int init_reftimestamp = 0x7fffffff;
 
 	if (KGSL_STATE_DUMP_AND_RECOVER != device->state)
-		kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);.
+		kgsl_pwrctrl_set_state(device, KGSL_STATE_INIT);
 
 	/* Power up the device */
 	kgsl_pwrctrl_enable(device);
