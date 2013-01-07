@@ -18,7 +18,6 @@
 #include "kgsl.h"
 #include "kgsl_pwrscale.h"
 #include "kgsl_device.h"
-#include "kgsl_trace.h"
 
 #define KGSL_PWRFLAGS_POWER_ON 0
 #define KGSL_PWRFLAGS_CLK_ON   1
@@ -63,20 +62,24 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 	if (new_level < (pwr->num_pwrlevels - 1) &&
 		new_level >= pwr->thermal_pwrlevel &&
 		new_level != pwr->active_pwrlevel) {
-		struct kgsl_pwrlevel *pwrlevel = &pwr->pwrlevels[new_level];
 		pwr->active_pwrlevel = new_level;
 		if ((test_bit(KGSL_PWRFLAGS_CLK_ON, &pwr->power_flags)) ||
 			(device->state == KGSL_STATE_NAP))
-			clk_set_rate(pwr->grp_clks[0], pwrlevel->gpu_freq);
+			clk_set_rate(pwr->grp_clks[0],
+					pwr->pwrlevels[pwr->active_pwrlevel].
+					gpu_freq);
 		if (test_bit(KGSL_PWRFLAGS_AXI_ON, &pwr->power_flags)) {
 			if (pwr->pcl)
 				msm_bus_scale_client_update_request(pwr->pcl,
-					pwrlevel->bus_freq);
+					pwr->pwrlevels[pwr->active_pwrlevel].
+					bus_freq);
 			else if (pwr->ebi1_clk)
-				clk_set_rate(pwr->ebi1_clk, pwrlevel->bus_freq);
+				clk_set_rate(pwr->ebi1_clk,
+					pwr->pwrlevels[pwr->active_pwrlevel].
+					bus_freq);
 		}
-		trace_kgsl_pwrlevel(device, pwr->active_pwrlevel,
-				    pwrlevel->gpu_freq);
+		KGSL_PWR_WARN(device, "kgsl pwr level changed to %d\n",
+					  pwr->active_pwrlevel);
 	}
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_pwrlevel_change);
@@ -332,7 +335,8 @@ void kgsl_pwrctrl_clk(struct kgsl_device *device, int state)
 	if (state == KGSL_PWRFLAGS_OFF) {
 		if (test_and_clear_bit(KGSL_PWRFLAGS_CLK_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_clk(device, state);
+			KGSL_PWR_INFO(device,
+				"clocks off, device %d\n", device->id);
 			for (i = KGSL_MAX_CLKS - 1; i > 0; i--)
 				if (pwr->grp_clks[i])
 					clk_disable(pwr->grp_clks[i]);
@@ -346,7 +350,9 @@ void kgsl_pwrctrl_clk(struct kgsl_device *device, int state)
 	} else if (state == KGSL_PWRFLAGS_ON) {
 		if (!test_and_set_bit(KGSL_PWRFLAGS_CLK_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_clk(device, state);
+			KGSL_PWR_INFO(device,
+				"clocks on, device %d\n", device->id);
+
 			if ((pwr->pwrlevels[0].gpu_freq > 0) &&
 				(device->state != KGSL_STATE_NAP))
 				clk_set_rate(pwr->grp_clks[0],
@@ -370,7 +376,8 @@ void kgsl_pwrctrl_axi(struct kgsl_device *device, int state)
 	if (state == KGSL_PWRFLAGS_OFF) {
 		if (test_and_clear_bit(KGSL_PWRFLAGS_AXI_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_bus(device, state);
+			KGSL_PWR_INFO(device,
+				"axi off, device %d\n", device->id);
 			if (pwr->ebi1_clk) {
 				clk_set_rate(pwr->ebi1_clk, 0);
 				clk_disable(pwr->ebi1_clk);
@@ -382,7 +389,8 @@ void kgsl_pwrctrl_axi(struct kgsl_device *device, int state)
 	} else if (state == KGSL_PWRFLAGS_ON) {
 		if (!test_and_set_bit(KGSL_PWRFLAGS_AXI_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_bus(device, state);
+			KGSL_PWR_INFO(device,
+				"axi on, device %d\n", device->id);
 			if (pwr->ebi1_clk) {
 				clk_enable(pwr->ebi1_clk);
 				clk_set_rate(pwr->ebi1_clk,
@@ -404,14 +412,16 @@ void kgsl_pwrctrl_pwrrail(struct kgsl_device *device, int state)
 	if (state == KGSL_PWRFLAGS_OFF) {
 		if (test_and_clear_bit(KGSL_PWRFLAGS_POWER_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_rail(device, state);
+			KGSL_PWR_INFO(device,
+				"power off, device %d\n", device->id);
 			if (pwr->gpu_reg)
 				regulator_disable(pwr->gpu_reg);
 		}
 	} else if (state == KGSL_PWRFLAGS_ON) {
 		if (!test_and_set_bit(KGSL_PWRFLAGS_POWER_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_rail(device, state);
+			KGSL_PWR_INFO(device,
+				"power on, device %d\n", device->id);
 			if (pwr->gpu_reg)
 				regulator_enable(pwr->gpu_reg);
 		}
@@ -425,14 +435,16 @@ void kgsl_pwrctrl_irq(struct kgsl_device *device, int state)
 	if (state == KGSL_PWRFLAGS_ON) {
 		if (!test_and_set_bit(KGSL_PWRFLAGS_IRQ_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_irq(device, state);
+			KGSL_PWR_INFO(device,
+				"irq on, device %d\n", device->id);
 			enable_irq(pwr->interrupt_num);
 			device->ftbl->irqctrl(device, 1);
 		}
 	} else if (state == KGSL_PWRFLAGS_OFF) {
 		if (test_and_clear_bit(KGSL_PWRFLAGS_IRQ_ON,
 			&pwr->power_flags)) {
-			trace_kgsl_irq(device, state);
+			KGSL_PWR_INFO(device,
+				"irq off, device %d\n", device->id);
 			device->ftbl->irqctrl(device, 0);
 			if (in_interrupt())
 				disable_irq_nosync(pwr->interrupt_num);
@@ -715,8 +727,8 @@ _sleep(struct kgsl_device *device)
 	case KGSL_STATE_SLUMBER:
 		break;
 	default:
-		KGSL_PWR_WARN(device, "unhandled state %s\n",
-				kgsl_pwrstate_to_str(device->state));
+		KGSL_PWR_WARN(device, "unhandled state %x\n",
+				device->state);
 		break;
 	}
 	return 0;
@@ -748,8 +760,8 @@ _slumber(struct kgsl_device *device)
 	case KGSL_STATE_SLUMBER:
 		break;
 	default:
-		KGSL_PWR_WARN(device, "unhandled state %s\n",
-				kgsl_pwrstate_to_str(device->state));
+		KGSL_PWR_WARN(device, "unhandled state %x\n",
+				device->state);
 		break;
 	}
 	return 0;
@@ -825,8 +837,8 @@ void kgsl_pwrctrl_wake(struct kgsl_device *device)
 	case KGSL_STATE_ACTIVE:
 		break;
 	default:
-		KGSL_PWR_WARN(device, "unhandled state %s\n",
-				kgsl_pwrstate_to_str(device->state));
+		KGSL_PWR_WARN(device, "unhandled state %x\n",
+				device->state);
 		kgsl_pwrctrl_request_state(device, KGSL_STATE_NONE);
 		break;
 	}
@@ -853,7 +865,7 @@ EXPORT_SYMBOL(kgsl_pwrctrl_disable);
 
 void kgsl_pwrctrl_set_state(struct kgsl_device *device, unsigned int state)
 {
-	trace_kgsl_pwr_set_state(device, state);
+	KGSL_PWR_WARN(device, "%x\n", state);
 	device->state = state;
 	device->requested_state = KGSL_STATE_NONE;
 }
@@ -862,36 +874,7 @@ EXPORT_SYMBOL(kgsl_pwrctrl_set_state);
 void kgsl_pwrctrl_request_state(struct kgsl_device *device, unsigned int state)
 {
 	if (state != KGSL_STATE_NONE && state != device->requested_state)
-		trace_kgsl_pwr_request_state(device, state);
+		KGSL_PWR_INFO(device, "%x\n", state);
 	device->requested_state = state;
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_request_state);
-
-const char *kgsl_pwrstate_to_str(unsigned int state)
-{
-	switch (state) {
-	case KGSL_STATE_NONE:
-		return "NONE";
-	case KGSL_STATE_INIT:
-		return "INIT";
-	case KGSL_STATE_ACTIVE:
-		return "ACTIVE";
-	case KGSL_STATE_NAP:
-		return "NAP";
-	case KGSL_STATE_SLEEP:
-		return "SLEEP";
-	case KGSL_STATE_SUSPEND:
-		return "SUSPEND";
-	case KGSL_STATE_HUNG:
-		return "HUNG";
-	case KGSL_STATE_DUMP_AND_RECOVER:
-		return "DNR";
-	case KGSL_STATE_SLUMBER:
-		return "SLUMBER";
-	default:
-		break;
-	}
-	return "UNKNOWN";
-}
-EXPORT_SYMBOL(kgsl_pwrstate_to_str);
-
