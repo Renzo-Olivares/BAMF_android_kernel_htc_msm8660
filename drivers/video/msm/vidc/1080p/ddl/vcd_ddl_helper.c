@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -10,6 +10,11 @@
  * GNU General Public License for more details.
  *
  */
+
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+#include <linux/ion.h>
+#endif
+
 #include <mach/msm_memtypes.h>
 #include "vcd_ddl.h"
 #include "vcd_ddl_shared_mem.h"
@@ -253,6 +258,17 @@ u32 ddl_decoder_dpb_init(struct ddl_client_context *ddl)
 				memset(frame[i].vcd_frm.virtual + luma_size,
 					 0x80808080,
 					frame[i].vcd_frm.alloc_len - luma_size);
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+				if (frame[i].vcd_frm.ion_flag == CACHED) {
+					clean_and_invalidate_caches(
+					(unsigned long)frame[i].
+					vcd_frm.virtual,
+					(unsigned long)frame[i].
+					vcd_frm.alloc_len,
+					(unsigned long)frame[i].
+					vcd_frm.physical);
+				}
+#endif
 			} else {
 				DDL_MSG_ERROR("luma size error");
 				return VCD_ERR_FAIL;
@@ -635,72 +651,108 @@ u32 ddl_allocate_dec_hw_buffers(struct ddl_client_context *ddl)
 	ddl_calc_dec_hw_buffers_size(ddl->codec_data.decoder.
 		codec.codec, width, height, dpb, &buf_size);
 	if (buf_size.sz_context > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->context.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->context, buf_size.sz_context,
 			DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_nb_ip > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->h264_nb_ip.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->h264_nb_ip, buf_size.sz_nb_ip,
 			DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_vert_nb_mv > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->h264_vert_nb_mv.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->h264_vert_nb_mv,
 			buf_size.sz_vert_nb_mv, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_nb_dcac > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->nb_dcac.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->nb_dcac, buf_size.sz_nb_dcac,
 			DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_upnb_mv > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->upnb_mv.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->upnb_mv, buf_size.sz_upnb_mv,
 			DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_sub_anchor_mv > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->sub_anchor_mv.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->sub_anchor_mv,
 			buf_size.sz_sub_anchor_mv, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_overlap_xform > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->overlay_xform.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->overlay_xform,
 			buf_size.sz_overlap_xform, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_bit_plane3 > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->bit_plane3.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->bit_plane3,
 			buf_size.sz_bit_plane3, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_bit_plane2 > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->bit_plane2.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->bit_plane2,
 			buf_size.sz_bit_plane2, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_bit_plane1 > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->bit_plane1.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->bit_plane1,
 			buf_size.sz_bit_plane1, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_stx_parser > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->stx_parser.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->stx_parser,
 			buf_size.sz_stx_parser, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 	}
 	if (buf_size.sz_desc > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		dec_bufs->desc.mem_type = DDL_MM_MEM;
+#endif
 		ptr = ddl_pmem_alloc(&dec_bufs->desc, buf_size.sz_desc,
 			DDL_KILO_BYTE(2));
 		if (!ptr)
@@ -741,6 +793,7 @@ u32 ddl_calc_enc_hw_buffers_size(enum vcd_codec codec, u32 width,
 		sz_cur_c = sz_dpb_c;
 	} else
 		status = VCD_ERR_NOT_SUPPORTED;
+	sz_context = DDL_FW_OTHER_CONTEXT_SPACE_SIZE;
 	if (!status) {
 		sz_strm = DDL_ALIGN(ddl_get_yuv_buf_size(width, height,
 			DDL_YUV_BUF_TYPE_LINEAR) + ddl_get_yuv_buf_size(width,
@@ -758,6 +811,7 @@ u32 ddl_calc_enc_hw_buffers_size(enum vcd_codec codec, u32 width,
 		} else if (codec == VCD_CODEC_H264) {
 			sz_md = DDL_ALIGN(mb_x * 48, DDL_KILO_BYTE(2));
 			sz_pred = DDL_ALIGN(2 * 8 * 1024, DDL_KILO_BYTE(2));
+			sz_context = DDL_FW_H264ENC_CONTEXT_SPACE_SIZE;
 			if (ddl) {
 				if (ddl->codec_data.encoder.
 					entropy_control.entropy_sel ==
@@ -782,7 +836,6 @@ u32 ddl_calc_enc_hw_buffers_size(enum vcd_codec codec, u32 width,
 			sz_mb_info = DDL_ALIGN(mb_x * mb_y * 6 * 8,
 					DDL_KILO_BYTE(2));
 		}
-		sz_context = DDL_FW_OTHER_CONTEXT_SPACE_SIZE;
 		if (buf_size) {
 			buf_size->sz_cur_y      = sz_cur_y;
 			buf_size->sz_cur_c      = sz_cur_c;
@@ -832,48 +885,72 @@ u32 ddl_allocate_enc_hw_buffers(struct ddl_client_context *ddl)
 		enc_bufs->sz_dpb_y = buf_size.sz_dpb_y;
 		enc_bufs->sz_dpb_c = buf_size.sz_dpb_c;
 		if (buf_size.sz_mv > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->mv.mem_type = DDL_MM_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->mv, buf_size.sz_mv,
 				DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_col_zero > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->col_zero.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->col_zero,
 				buf_size.sz_col_zero, DDL_KILO_BYTE(2));
 		if (!ptr)
 			status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_md > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->md.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->md, buf_size.sz_md,
 				DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_pred > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->pred.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->pred,
 				buf_size.sz_pred, DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_nbor_info > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->nbor_info.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->nbor_info,
 				buf_size.sz_nbor_info, DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_acdc_coef > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->acdc_coef.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->acdc_coef,
 				buf_size.sz_acdc_coef, DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_mb_info > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->mb_info.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->mb_info,
 				buf_size.sz_mb_info, DDL_KILO_BYTE(2));
 			if (!ptr)
 				status = VCD_ERR_ALLOC_FAIL;
 		}
 		if (buf_size.sz_context > 0) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+			enc_bufs->context.mem_type = DDL_CMD_MEM;
+#endif
 			ptr = ddl_pmem_alloc(&enc_bufs->context,
 				buf_size.sz_context, DDL_KILO_BYTE(2));
 			if (!ptr)

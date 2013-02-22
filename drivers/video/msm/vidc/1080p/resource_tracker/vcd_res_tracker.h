@@ -28,6 +28,7 @@
 
 #define RESTRK_1080P_MIN_PERF_LEVEL RESTRK_1080P_VGA_PERF_LEVEL
 #define RESTRK_1080P_MAX_PERF_LEVEL RESTRK_1080P_1080P_PERF_LEVEL
+
 struct res_trk_context {
 	struct device *device;
 	u32 irq_num;
@@ -40,6 +41,10 @@ struct res_trk_context {
 	struct regulator *footswitch;
 	struct msm_vidc_platform_data *vidc_platform_data;
 	int memtype;
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	int fw_mem_type;
+	int cmd_mem_type;
+#endif
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
 	uint32_t     pcl;
@@ -50,19 +55,27 @@ struct res_trk_context {
 	u32 disable_dmx;
 	u32 disable_fullhd;
 	enum ddl_mem_area res_mem_type;
+	u32 mmu_clks_on;
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	u32 secure_session;
+	struct mutex secure_lock;
+#endif
 };
 
-#if DEBUG
+/*HTC_START*/
+extern u32 vidc_msg_debug;
 
-#define VCDRES_MSG_LOW(xx_fmt...)	printk(KERN_INFO "\n\t* [VID] " xx_fmt)
-#define VCDRES_MSG_MED(xx_fmt...)	printk(KERN_INFO "\n  * [VID] " xx_fmt)
+#define VCDRES_MSG_LOW(xx_fmt...)			\
+	if (vidc_msg_debug) {				\
+		printk(KERN_INFO "\n\t* [VID] " xx_fmt);\
+	}
 
-#else
+#define VCDRES_MSG_MED(xx_fmt...)			\
+	if (vidc_msg_debug) {				\
+		printk(KERN_INFO "\n  * [VID] " xx_fmt);\
+	}
+/*HTC_END*/
 
-#define VCDRES_MSG_LOW(xx_fmt...)
-#define VCDRES_MSG_MED(xx_fmt...)
-
-#endif
 
 #define VCDRES_MSG_HIGH(xx_fmt...)	printk(KERN_WARNING "\n [VID] " xx_fmt)
 #define VCDRES_MSG_ERROR(xx_fmt...)	printk(KERN_ERR "\n [VID] err: " xx_fmt)
