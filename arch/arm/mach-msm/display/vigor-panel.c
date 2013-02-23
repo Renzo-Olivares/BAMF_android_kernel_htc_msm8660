@@ -12,6 +12,18 @@
  * GNU General Public License for more details.
  *
  */
+#if defined(CONFIG_ARCH_MSM8X60) && !defined(CONFIG_FB_MSM8960)
+	#include "../../../../drivers/video/msm_8x60/msm_fb.h"
+	#include "../../../../drivers/video/msm_8x60/mipi_dsi.h"
+	#include "../../../../drivers/video/msm_8x60/mdp4.h"
+#elif defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_FB_MSM8960)
+	#include "../../../../drivers/video/msm/msm_fb.h"
+	#include "../../../../drivers/video/msm/mipi_dsi.h"
+	#include "../../../../drivers/video/msm/mdp4.h"
+#else
+	#warning "Unsupported ARCH CONFIG"
+#endif
+
 
 #include <asm/io.h>
 #include <asm/mach-types.h>
@@ -36,7 +48,6 @@
 #include "../devices.h"
 #include "../board-vigor.h"
 #include "../devices-msm8x60.h"
-#include "../../../../drivers/video/msm_8x60/mdp_hw.h"
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 #include <linux/fb.h>
 #endif
