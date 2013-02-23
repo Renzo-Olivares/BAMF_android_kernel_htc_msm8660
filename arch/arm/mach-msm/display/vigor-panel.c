@@ -24,21 +24,7 @@
 	#warning "Unsupported ARCH CONFIG"
 #endif
 
-
-#include <asm/io.h>
-#include <asm/mach-types.h>
-#include <linux/clk.h>
-#include <linux/err.h>
-#include <linux/gpio.h>
-#include <linux/init.h>
-#include <linux/leds.h>
-#include <linux/delay.h>
-#include <linux/kernel.h>
-#include <linux/spi/spi.h>
-#include <linux/platform_device.h>
-#include <linux/regulator/consumer.h>
-#include <mach/msm_fb.h>
-#include <mach/msm_iomap.h>
+#include <mach/gpio.h>
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
 #include <linux/mfd/pmic8058.h>
