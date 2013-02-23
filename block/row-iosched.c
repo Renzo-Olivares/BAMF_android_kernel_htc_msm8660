@@ -634,12 +634,11 @@ done:
  * row_init_queue() - Init scheduler data structures
  * @q:	requests queue
  *
- * Saves pointer to struct row_data in elevator->elevator_data for
- * this dispatch queue.
- * Return 0 on success, error code otherwise
+ * Return pointer to struct row_data to be saved in elevator for
+ * this dispatch queue
  *
  */
-static int row_init_queue(struct request_queue *q)
+static void *row_init_queue(struct request_queue *q)
 {
 
 	struct row_data *rdata;
@@ -648,8 +647,13 @@ static int row_init_queue(struct request_queue *q)
 	rdata = kmalloc_node(sizeof(*rdata),
 			     GFP_KERNEL | __GFP_ZERO, q->node);
 	if (!rdata)
+<<<<<<< HEAD
+		return NULL;
+
+=======
 		return -ENOMEM;
 	memset(rdata, 0, sizeof(*rdata));
+>>>>>>> 7379627... block: row: Update initial values of ROW data structures
 	for (i = 0; i < ROWQ_MAX_PRIO; i++) {
 		INIT_LIST_HEAD(&rdata->row_queues[i].fifo);
 		rdata->row_queues[i].disp_quantum = row_queues_def[i].quantum;
@@ -675,9 +679,15 @@ static int row_init_queue(struct request_queue *q)
 
 	rdata->rd_idle_data.idling_queue_idx = ROWQ_MAX_PRIO;
 	rdata->dispatch_queue = q;
-	q->elevator->elevator_data = rdata;
 
+<<<<<<< HEAD
+	rdata->nr_urgent_in_flight = 0;
+	rdata->nr_reqs[READ] = rdata->nr_reqs[WRITE] = 0;
+
+	return rdata;
+=======
 	return 0;
+>>>>>>> 7379627... block: row: Update initial values of ROW data structures
 }
 
 /*
@@ -773,13 +783,11 @@ static enum row_queue_prio row_get_queue_prio(struct request *rq)
  * row_set_request() - Set ROW data structures associated with this request.
  * @q:		requests queue
  * @rq:		pointer to the request
- * @bio:		ignored
  * @gfp_mask:	ignored
  *
  */
 static int
-row_set_request(struct request_queue *q, struct request *rq,
-			struct bio *bio, gfp_t gfp_mask)
+row_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
 {
 	struct row_data *rd = (struct row_data *)q->elevator->elevator_data;
 	unsigned long flags;
