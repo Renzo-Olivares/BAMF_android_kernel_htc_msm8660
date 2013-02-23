@@ -99,12 +99,14 @@ struct msm_rotator_mem_planes {
 #define checkoffset(offset, size, max_size) \
 	((size) > (max_size) || (offset) > ((max_size) - (size)))
 
+typedef void* rot_key_t;
+
 struct msm_rotator_dev {
 	void __iomem *io_base;
 	int irq;
 	struct msm_rotator_img_info *img_info[MAX_SESSIONS];
 	struct clk *core_clk;
-	int pid_list[MAX_SESSIONS];
+	rot_key_t key_list[MAX_SESSIONS];
 	struct clk *pclk;
 	int rot_clk_state;
 	struct regulator *regulator;
@@ -801,7 +803,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 			break;
 
 	if (s == MAX_SESSIONS) {
-		dev_dbg(msm_rotator_dev->device,
+		dev_err(msm_rotator_dev->device,
 			"%s() : Attempt to use invalid session_id %d\n",
 			__func__, s);
 		rc = -EINVAL;
@@ -1018,6 +1020,7 @@ static int msm_rotator_do_rotate(unsigned long arg)
 				msm_rotator_dev->last_session_idx != s);
 		break;
 	default:
+		pr_err("%s: unsupported format 0x%x\n", __func__, format);
 		rc = -EINVAL;
 		goto do_rotate_exit;
 	}
@@ -1053,11 +1056,11 @@ do_rotate_unlock_mutex:
 	put_img(srcp0_file, srcp0_ihdl);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
 	dev_dbg(msm_rotator_dev->device, "%s() returning rc = %d\n",
-		__func__, rc);
+			__func__, rc);
 	return rc;
 }
 
-static int msm_rotator_start(unsigned long arg, int pid)
+static int msm_rotator_start(unsigned long arg, rot_key_t key)
 {
 	struct msm_rotator_img_info info;
 	int rc = 0;
@@ -1139,7 +1142,7 @@ static int msm_rotator_start(unsigned long arg, int pid)
 			(unsigned int)msm_rotator_dev->img_info[s]
 			)) {
 			*(msm_rotator_dev->img_info[s]) = info;
-			msm_rotator_dev->pid_list[s] = pid;
+			msm_rotator_dev->key_list[s] = key;
 
 			if (msm_rotator_dev->last_session_idx == s)
 				msm_rotator_dev->last_session_idx =
@@ -1167,7 +1170,7 @@ static int msm_rotator_start(unsigned long arg, int pid)
 		info.session_id = (unsigned int)
 			msm_rotator_dev->img_info[first_free_index];
 		*(msm_rotator_dev->img_info[first_free_index]) = info;
-		msm_rotator_dev->pid_list[first_free_index] = pid;
+		msm_rotator_dev->key_list[first_free_index] = key;
 
 		if (copy_to_user((void __user *)arg, &info, sizeof(info)))
 			rc = -EFAULT;
@@ -1202,7 +1205,7 @@ static int msm_rotator_finish(unsigned long arg)
 					INVALID_SESSION;
 			kfree(msm_rotator_dev->img_info[s]);
 			msm_rotator_dev->img_info[s] = NULL;
-			msm_rotator_dev->pid_list[s] = 0;
+			msm_rotator_dev->key_list[s] = 0;
 			break;
 		}
 	}
@@ -1216,14 +1219,14 @@ static int msm_rotator_finish(unsigned long arg)
 static int
 msm_rotator_open(struct inode *inode, struct file *filp)
 {
-	int *id;
+	rot_key_t *id;
 	int i;
 
 	if (filp->private_data)
 		return -EBUSY;
 
 	mutex_lock(&msm_rotator_dev->rotator_lock);
-	id = &msm_rotator_dev->pid_list[0];
+	id = &msm_rotator_dev->key_list[0];
 	for (i = 0; i < MAX_SESSIONS; i++, id++) {
 		if (*id == 0)
 			break;
@@ -1233,7 +1236,7 @@ msm_rotator_open(struct inode *inode, struct file *filp)
 	if (i == MAX_SESSIONS)
 		return -EBUSY;
 
-	filp->private_data = (void *)current->pid;
+	filp->private_data = (void *)filp;
 
 	return 0;
 }
@@ -1242,13 +1245,13 @@ static int
 msm_rotator_close(struct inode *inode, struct file *filp)
 {
 	int s;
-	int pid;
+	rot_key_t *key;
 
-	pid = (int)filp->private_data;
+	key = (rot_key_t)filp->private_data;
 	mutex_lock(&msm_rotator_dev->rotator_lock);
 	for (s = 0; s < MAX_SESSIONS; s++) {
 		if (msm_rotator_dev->img_info[s] != NULL &&
-			msm_rotator_dev->pid_list[s] == pid) {
+			msm_rotator_dev->key_list[s] == key) {
 			kfree(msm_rotator_dev->img_info[s]);
 			msm_rotator_dev->img_info[s] = NULL;
 			if (msm_rotator_dev->last_session_idx == s)
@@ -1264,16 +1267,16 @@ msm_rotator_close(struct inode *inode, struct file *filp)
 static long msm_rotator_ioctl(struct file *file, unsigned cmd,
 						 unsigned long arg)
 {
-	int pid;
+	rot_key_t key;
 
 	if (_IOC_TYPE(cmd) != MSM_ROTATOR_IOCTL_MAGIC)
 		return -ENOTTY;
 
-	pid = (int)file->private_data;
+	key = (rot_key_t)file->private_data;
 
 	switch (cmd) {
 	case MSM_ROTATOR_IOCTL_START:
-		return msm_rotator_start(arg, pid);
+		return msm_rotator_start(arg, key);
 	case MSM_ROTATOR_IOCTL_ROTATE:
 		return msm_rotator_do_rotate(arg);
 	case MSM_ROTATOR_IOCTL_FINISH:
