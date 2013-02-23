@@ -387,19 +387,12 @@ static int row_dispatch_requests(struct request_queue *q, int force)
 	if (list_empty(&rd->row_queues[currq].rqueue.fifo)) {
 		/* check idling */
 		if (delayed_work_pending(&rd->read_idle.idle_work)) {
-			if (force) {
-				(void)cancel_delayed_work(
-				&rd->read_idle.idle_work);
-				row_log_rowq(rd, currq,
-					"Canceled delayed work - forced dispatch");
-			} else {
-				row_log_rowq(rd, currq,
-						 "Delayed work pending. Exiting");
-				goto done;
-			}
+			row_log_rowq(rd, currq,
+				     "Delayed work pending. Exiting");
+			goto done;
 		}
 
-		if (!force && queue_idling_enabled[currq] &&
+		if (queue_idling_enabled[currq] &&
 		    rd->row_queues[currq].rqueue.idle_data.begin_idling) {
 			if (!queue_delayed_work(rd->read_idle.idle_workqueue,
 			    &rd->read_idle.idle_work,
