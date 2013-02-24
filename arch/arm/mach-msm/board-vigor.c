@@ -134,8 +134,6 @@
 #include <mach/mdm.h>
 #include <mach/htc_util.h>
 #include <mach/board_htc.h>
-#include <linux/ion.h>
-#include <mach/ion.h>
 
 #ifdef CONFIG_PERFLOCK
 #include <mach/perflock.h>
@@ -3125,30 +3123,6 @@ static void __init msm8x60_init_dsps(void)
 #define USER_SMI_SIZE			   (MSM_SMI_SIZE - KERNEL_SMI_SIZE)
 #define MSM_PMEM_SMIPOOL_BASE	   USER_SMI_BASE
 #define MSM_PMEM_SMIPOOL_SIZE	   USER_SMI_SIZE
-
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-#define MSM_ION_SF_SIZE       MSM_PMEM_SF_SIZE
-#define MSM_ION_CAMERA_SIZE   0x2000000
-#define MSM_ION_ROTATOR_SIZE  MSM_PMEM_ADSP2_SIZE
-#define MSM_ION_MM_FW_SIZE    0x200000  /* KERNEL_SMI_SIZE */
-#define MSM_ION_MM_SIZE       0x3D00000 /* USER_SMI_SIZE */
-#define MSM_ION_MFC_SIZE      0x100000  /* KERNEL_SMI_SIZE */
-#define MSM_ION_WB_SIZE       0x2FD000  /* MSM_OVERLAY_BLT_SIZE */
-
-#ifdef CONFIG_TZCOM
-#define MSM_ION_QSECOM_SIZE   MSM_PMEM_KERNEL_EBI1_SIZE
-#define MSM_ION_HEAP_NUM      10
-#else
-#define MSM_ION_HEAP_NUM      8
-#endif
-
-#define MSM_ION_CAMERA_BASE   (0x40E00000)	/* start from (MSM_FB_BASE + MSM_FB_SIZE), and align to 1MB */
-#define MSM_ION_WB_BASE       (0x45C00000)
-
-
-#else /* CONFIG_MSM_MULTIMEDIA_USE_ION */
-#define MSM_ION_HEAP_NUM      1
-#endif
 
 static unsigned fb_size;
 static int __init fb_size_setup(char *p)
