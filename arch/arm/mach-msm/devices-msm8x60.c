@@ -764,7 +764,7 @@ static struct msm_bus_vectors grp3d_nominal_high_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2484),
+		.ib = KGSL_CONVERT_TO_MBPS(2008),
 	},
 };
 
@@ -773,7 +773,7 @@ static struct msm_bus_vectors grp3d_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2976),
+		.ib = KGSL_CONVERT_TO_MBPS(2484),
 	},
 };
 
@@ -820,7 +820,7 @@ static struct msm_bus_vectors grp2d0_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(1300),
+		.ib = KGSL_CONVERT_TO_MBPS(990),
 	},
 };
 
@@ -855,7 +855,7 @@ static struct msm_bus_vectors grp2d1_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_2D_CORE1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(1300),
+		.ib = KGSL_CONVERT_TO_MBPS(990),
 	},
 };
 
@@ -910,7 +910,7 @@ static struct resource kgsl_3d0_resources[] = {
 static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 	.pwrlevel = {
 		{
-			.gpu_freq = 320000000,
+			.gpu_freq = 266667000,
 			.bus_freq = 4,
 			.io_fraction = 0,
 		},
@@ -973,11 +973,11 @@ static struct resource kgsl_2d0_resources[] = {
 static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 	.pwrlevel = {
 		{
-			.gpu_freq = 228571000,
+			.gpu_freq = 200000000,
 			.bus_freq = 1,
 		},
 		{
-			.gpu_freq = 228571000,
+			.gpu_freq = 200000000,
 			.bus_freq = 0,
 		},
 	},
@@ -1020,11 +1020,11 @@ static struct resource kgsl_2d1_resources[] = {
 static struct kgsl_device_platform_data kgsl_2d1_pdata = {
 	.pwrlevel = {
 		{
-			.gpu_freq = 228571000,
+			.gpu_freq = 200000000,
 			.bus_freq = 1,
 		},
 		{
-			.gpu_freq = 228571000,
+			.gpu_freq = 200000000,
 			.bus_freq = 0,
 		},
 	},
@@ -1595,10 +1595,148 @@ int __init msm_add_sdcc(unsigned int controller, struct mmc_platform_data *plat)
 	return platform_device_register(pdev);
 }
 
+#ifdef CONFIG_MSM_CAMERA_V4L2
+static struct resource msm_csic0_resources[] = {
+	{
+		.name   = "csic",
+		.start  = 0x04800000,
+		.end    = 0x04800000 + 0x00000400 - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	{
+		.name   = "csic",
+		.start  = CSI_0_IRQ,
+		.end    = CSI_0_IRQ,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+
+static struct resource msm_csic1_resources[] = {
+	{
+		.name   = "csic",
+		.start  = 0x04900000,
+		.end    = 0x04900000 + 0x00000400 - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	{
+		.name   = "csic",
+		.start  = CSI_1_IRQ,
+		.end    = CSI_1_IRQ,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+
+struct resource msm_vfe_resources[] = {
+	{
+		.name   = "msm_vfe",
+		.start	= 0x04500000,
+		.end	= 0x04500000 + SZ_1M - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.name   = "msm_vfe",
+		.start	= VFE_IRQ,
+		.end	= VFE_IRQ,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct resource msm_vpe_resources[] = {
+	{
+		.name   = "msm_vpe",
+		.start	= 0x05300000,
+		.end	= 0x05300000 + SZ_1M - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.name   = "msm_vpe",
+		.start	= INT_VPE,
+		.end	= INT_VPE,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct msm_cam_clk_info csic_clk_info[] = {
+	{"csi_src_clk", 177780000},
+	{"csi_clk", -1},
+	{"csi_pclk", -1},
+};
+
+static struct msm_cam_clk_info vfe_clk_info[] = {
+	{"vfe_clk", 228570000},
+	{"vfe_pclk", -1},
+	{"csi0_vfe_clk", -1},
+	{"csi1_vfe_clk", -1},
+};
+
+static struct msm_cam_clk_info vpe_clk_info[] = {
+	{"vpe_clk", 160000000},
+	{"vpe_pclk", -1},
+};
+
+struct msm_camera_platform_info csic_info = {
+	.clk_info = csic_clk_info,
+	.num_clks = ARRAY_SIZE(csic_clk_info),
+};
+
+struct msm_camera_platform_info vfe_info = {
+	.clk_info = vfe_clk_info,
+	.num_clks = ARRAY_SIZE(vfe_clk_info),
+};
+
+struct msm_camera_platform_info vpe_info = {
+	.clk_info = vpe_clk_info,
+	.num_clks = ARRAY_SIZE(vpe_clk_info),
+};
+
+
+struct platform_device msm8x60_device_csic0 = {
+	.name           = "msm_csic",
+	.id             = 0,
+	.resource       = msm_csic0_resources,
+	.num_resources  = ARRAY_SIZE(msm_csic0_resources),
+	.dev	= {
+			.platform_data = &csic_info,
+	},
+};
+
+struct platform_device msm8x60_device_csic1 = {
+	.name           = "msm_csic",
+	.id             = 1,
+	.resource       = msm_csic1_resources,
+	.num_resources  = ARRAY_SIZE(msm_csic1_resources),
+	.dev	= {
+			.platform_data = &csic_info,
+	},
+};
+
+struct platform_device msm8x60_device_vfe = {
+	.name           = "msm_vfe",
+	.id             = 0,
+	.resource       = msm_vfe_resources,
+	.num_resources  = ARRAY_SIZE(msm_vfe_resources),
+	.dev	= {
+			.platform_data = &vfe_info,
+	},
+};
+
+struct platform_device msm8x60_device_vpe = {
+	.name           = "msm_vpe",
+	.id             = 0,
+	.resource       = msm_vpe_resources,
+	.num_resources  = ARRAY_SIZE(msm_vpe_resources),
+	.dev	= {
+			.platform_data = &vpe_info,
+	},
+};
+
+#endif
+
+
 #define MIPI_DSI_HW_BASE	0x04700000
 #define ROTATOR_HW_BASE		0x04E00000
 #define TVENC_HW_BASE		0x04F00000
-#define MDP_HW_BASE		0x05100000
+#define MDP_HW_BASE			0x05100000
 
 static struct resource msm_mipi_dsi_resources[] = {
 	{
@@ -1900,7 +2038,6 @@ struct platform_device msm_device_gadget_peripheral = {
 		.coherent_dma_mask	= 0xffffffffULL,
 	},
 };
-#ifdef CONFIG_USB_EHCI_MSM_72K
 static struct resource resources_hsusb_host[] = {
 	{
 		.start	= 0x12500000,
@@ -1925,6 +2062,7 @@ struct platform_device msm_device_hsusb_host = {
 	},
 };
 
+#ifdef CONFIG_USB_EHCI_MSM_72K
 static struct platform_device *msm_host_devices[] = {
 	&msm_device_hsusb_host,
 };
