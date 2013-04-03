@@ -303,19 +303,14 @@ int vigor_get_speaker_channels(void)
 int vigor_support_beats(void)
 {
 	/* HW revision support 1V output from headset */
-	if (get_engineerid() > 2)
 		return 1;
-	else
-		return 0;
 }
 
 void vigor_enable_beats(int en)
 {
+	en = 1;
 	pr_aud_info("%s: %d\n", __func__, en);
-	if (en)
-		adie_codec_set_device_analog_volume(NULL, 2, 0x04);
-	else
-		adie_codec_set_device_analog_volume(NULL, 2, 0x14);
+        set_beats_on(en);
 }
 
 int vigor_is_msm_i2s_slave(void)
