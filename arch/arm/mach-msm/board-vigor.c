@@ -184,20 +184,20 @@ extern void *pmem_setup_smi_region(void);
 #define MSM_ION_CAMERA_BASE   0x40E00000
 #define MSM_ION_AUDIO_BASE    0x6FB00000
 
-#define MSM_ION_ROTATOR_SIZE  0x654000
+// #define MSM_ION_ROTATOR_SIZE  0x654000
 #define MSM_ION_MM_FW_SIZE    0x200000
 #define MSM_ION_MM_SIZE       0x3D00000
 #define MSM_ION_MFC_SIZE      0x100000
 #define MSM_ION_CAMERA_SIZE   0x2000000
-#define MSM_ION_SF_SIZE       0x4000000
+// #define MSM_ION_SF_SIZE       0x4000000
 #define MSM_ION_AUDIO_SIZE	  0x4CF000
 
-#ifdef CONFIG_TZCOM
-#define MSM_ION_QSECOM_SIZE   0xC7000
-#define MSM_ION_HEAP_NUM      9
-#else
-#define MSM_ION_HEAP_NUM      8
-#endif
+// #ifdef CONFIG_TZCOM
+// #define MSM_ION_QSECOM_SIZE   0xC7000
+// #define MSM_ION_HEAP_NUM      9
+// #else
+// #define MSM_ION_HEAP_NUM      8
+// #endif
 
 
 enum {
@@ -3159,7 +3159,33 @@ static void __init msm8x60_init_dsps(void)
 #define USER_SMI_SIZE			   (MSM_SMI_SIZE - KERNEL_SMI_SIZE)
 #define MSM_PMEM_SMIPOOL_BASE	   USER_SMI_BASE
 #define MSM_PMEM_SMIPOOL_SIZE	   USER_SMI_SIZE
+#define MSM_PMEM_KERNEL_EBI1_SIZE  0x600000 /* (6MB) For QSECOM */
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+#define MSM_ION_SF_SIZE       MSM_PMEM_SF_SIZE
+#define MSM_ION_ROTATOR_SIZE  MSM_PMEM_ADSP2_SIZE
+#define MSM_ION_MM_FW_SIZE    0x200000  /* KERNEL_SMI_SIZE */
+#define MSM_ION_MM_SIZE       0x3D00000 /* USER_SMI_SIZE */
+#define MSM_ION_MFC_SIZE      0x100000  /* KERNEL_SMI_SIZE */
+#define MSM_ION_WB_SIZE       0x2FD000  /* MSM_OVERLAY_BLT_SIZE */
 
+#ifdef CONFIG_TZCOM
+#define MSM_ION_QSECOM_SIZE   MSM_PMEM_KERNEL_EBI1_SIZE
+#define MSM_ION_HEAP_NUM      7
+#else
+#define MSM_ION_HEAP_NUM      6
+#endif
+
+#define MSM_ION_MM_FW_BASE    0x38000000
+#define MSM_ION_MM_BASE	      (MSM_ION_MM_FW_BASE + MSM_ION_MM_FW_SIZE)
+#define MSM_ION_MFC_BASE      (MSM_ION_MM_BASE + MSM_ION_MM_SIZE)
+
+#define MSM_ION_WB_BASE       (0x80000000 - MSM_ION_WB_SIZE)
+#define MSM_ION_ROTATOR_BASE  (MSM_ION_WB_BASE - MSM_ION_ROTATOR_SIZE)
+#define MSM_ION_QSECOM_BASE   (MSM_ION_ROTATOR_BASE - MSM_ION_QSECOM_SIZE)
+
+#else /* CONFIG_MSM_MULTIMEDIA_USE_ION */
+#define MSM_ION_HEAP_NUM      1
+#endif
 
 
 
@@ -7712,11 +7738,24 @@ static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
 		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
 	},
 };
-
+static void __init reserve_ion_memory(void)
+{
+#if defined(CONFIG_ION_MSM) && defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
+//	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_ROTATOR_SIZE;
+#ifdef CONFIG_TZCOM
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_QSECOM_SIZE;
+#endif
+#endif
+}
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
  #ifdef CONFIG_ION_MSM
 	vigor_ion_reserve_memory(msm8x60_reserve_table);
+	reserve_ion_memory();
 #endif
 }
 
