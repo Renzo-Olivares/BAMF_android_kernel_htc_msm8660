@@ -1,0 +1,11 @@
+--- drivers/net/wireless/bcmdhd/wl_android.c	2013-04-20 02:33:28.199487030 -0700
++++ drivers/net/wireless/bcmdhd/wl_android.c	2013-04-20 02:30:37.333070578 -0700
+@@ -915,7 +1195,7 @@
+ 				android_ap_black_list.ea[i].octet[3], android_ap_black_list.ea[i].octet[4], android_ap_black_list.ea[i].octet[5]);
+ 
+ 		/* deauth if there is associated station not in list */
+-		assoc_maclist->count = 8;
++		assoc_maclist->count = 10;
+ 		wldev_ioctl(dev, WLC_GET_ASSOCLIST, assoc_maclist, 256, 0);
+ 		if (assoc_maclist->count) {
+ 			int j;

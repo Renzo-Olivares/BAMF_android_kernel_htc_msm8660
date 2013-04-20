@@ -1,0 +1,12 @@
+--- arch/arm/mach-msm/include/mach/htc_headset_pmic.h	2013-04-20 02:33:28.183486808 -0700
++++ arch/arm/mach-msm/include/mach/htc_headset_pmic.h	2013-04-20 02:30:35.377042968 -0700
+@@ -95,6 +95,9 @@
+ 	unsigned int hpin_debounce;
+ 	unsigned int key_irq_type;
+ 	struct wake_lock hs_wake_lock;
++	struct class* htc_accessory_class;
++	struct device* pmic_dev;
++	struct hrtimer timer;
+ };
+ 
+ #endif

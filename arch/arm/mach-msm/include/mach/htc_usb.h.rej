@@ -1,0 +1,19 @@
+--- arch/arm/mach-msm/include/mach/htc_usb.h	2013-04-20 02:33:28.183486808 -0700
++++ arch/arm/mach-msm/include/mach/htc_usb.h	2013-04-20 02:30:35.377042968 -0700
+@@ -1408,9 +1977,14 @@
+ 	0x0c07, 0x0e2c, /* ums + adb + diag */
+ 	0x0c08, 0x0e2d, /* ums + diag */
+ 	0x0ff8, 0x0e2e, /* CDC-ECM */
+-	0x0fd5, 0x0e2f, /* ums + diag + 9k diag + rmnet */
+-	0x0fd4, 0x0e30, /* ums + adb + diag + 9k diag + rmnet */
++//0e2f is recycle	0x0fd5, 0x0e2f, /* ums + diag + 9k diag + rmnet */
++//0e30 is recycle	0x0fd4, 0x0e30, /* ums + adb + diag + 9k diag + rmnet */
+ 	0x0ff9, 0x0ccb, /* ums */
++	0x0ffc, 0x0e7d, /* adb + rndis, tethering with USB debugging */
++	0x0fa4, 0x0e9b, /* mtp + adb + 9k rmnet */
++	0x0fa5, 0x0e9c, /* mtp + 9k rmnet */
++	0x0f99, 0x0e9d, /* mtp + adb + diag */
++	0x0f9a, 0x0e9e, /* mtp + diag */
+ 	-1,
+ };
+ 

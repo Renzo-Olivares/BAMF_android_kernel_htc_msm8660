@@ -1,0 +1,11 @@
+--- drivers/net/wireless/bcmdhd/dhd_sdio.c	2013-04-20 02:33:28.199487030 -0700
++++ drivers/net/wireless/bcmdhd/dhd_sdio.c	2013-04-20 02:30:37.329070523 -0700
+@@ -5531,7 +5543,7 @@
+ 	/* si_attach() will provide an SI handle and scan the backplane */
+ 	if (!(bus->sih = si_attach((uint)devid, osh, regsva, DHD_BUS, sdh,
+ 	                           &bus->vars, &bus->varsz))) {
+-		DHD_ERROR(("%s: si_attach failed!\n", __func__));
++		DHD_ERROR(("%s: si_attach failed!\n", __FUNCTION__));
+ 		goto fail;
+ 	}
+ 

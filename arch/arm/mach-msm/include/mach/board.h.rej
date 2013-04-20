@@ -1,0 +1,10 @@
+--- arch/arm/mach-msm/include/mach/board.h	2013-04-20 02:33:28.183486808 -0700
++++ arch/arm/mach-msm/include/mach/board.h	2013-04-20 02:30:35.373042910 -0700
+@@ -517,6 +517,7 @@
+ 	int memtype;
+ 	u32 enable_ion;
+ 	int disable_dmx;
++	int disable_fullhd;
+ #ifdef CONFIG_MSM_BUS_SCALING
+ 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
+ #endif

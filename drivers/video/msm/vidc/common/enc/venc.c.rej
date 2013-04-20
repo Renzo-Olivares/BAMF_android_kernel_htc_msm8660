@@ -1,0 +1,10 @@
+--- drivers/video/msm/vidc/common/enc/venc.c	2013-04-20 02:33:28.207487145 -0700
++++ drivers/video/msm/vidc/common/enc/venc.c	2013-04-20 02:30:38.461086501 -0700
+@@ -574,6 +612,7 @@
+ 
+ 	init_completion(&client_ctx->event);
+ 	mutex_init(&client_ctx->msg_queue_lock);
++	mutex_init(&client_ctx->enrty_queue_lock);
+ 	INIT_LIST_HEAD(&client_ctx->msg_queue);
+ 	init_waitqueue_head(&client_ctx->msg_wait);
+ 	if (vcd_get_ion_status()) {

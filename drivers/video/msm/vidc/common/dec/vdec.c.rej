@@ -1,0 +1,42 @@
+--- drivers/video/msm/vidc/common/dec/vdec.c	2013-04-20 02:33:28.207487145 -0700
++++ drivers/video/msm/vidc/common/dec/vdec.c	2013-04-20 02:30:38.461086501 -0700
+@@ -2026,33 +2092,30 @@
+ 	u8 client_count = 0;
+ 
+ 	INFO("msm_vidc_dec: Inside %s()", __func__);
+-	mutex_lock(&vid_dec_device_p->lock);
+ 
+ 	client_count = vcd_get_num_of_clients();
+ 	if (client_count == VIDC_MAX_NUM_CLIENTS) {
+ 		ERR("ERROR : vid_dec_open() max number of clients"
+-		    "limit reached\n");
+-		mutex_unlock(&vid_dec_device_p->lock);
+-		return -ENODEV;
++			"limit reached\n");
++		goto client_failure;
+ 	}
+ 
+ 	DBG(" Virtual Address of ioremap is %p\n", vid_dec_device_p->virt_base);
+ 	if (!vid_dec_device_p->num_clients) {
+ 		if (!vidc_load_firmware())
+-			return -ENODEV;
++			goto client_failure;
+ 	}
+ 
+ 	client_index = vid_dec_get_empty_client_index();
+-	/* HTC_START (klockwork issue)*/
+-	if (client_index < 0) {
++	if (client_index == -1) {
+ 		ERR("%s() : No free clients client_index == -1\n", __func__);
+-		return -ENODEV;
++		goto client_failure;
+ 	}
+-	/* HTC_END */
+ 	client_ctx = &vid_dec_device_p->vdec_clients[client_index];
+ 	vid_dec_device_p->num_clients++;
+ 	init_completion(&client_ctx->event);
+ 	mutex_init(&client_ctx->msg_queue_lock);
++	mutex_init(&client_ctx->enrty_queue_lock);
+ 	INIT_LIST_HEAD(&client_ctx->msg_queue);
+ 	init_waitqueue_head(&client_ctx->msg_wait);
+ 	client_ctx->stop_msg = 0;

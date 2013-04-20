@@ -1,0 +1,66 @@
+--- drivers/video/msm/vidc/1080p/resource_tracker/vcd_res_tracker.h	2013-04-20 02:33:28.207487145 -0700
++++ drivers/video/msm/vidc/1080p/resource_tracker/vcd_res_tracker.h	2013-04-20 02:30:38.457086445 -0700
+@@ -1,4 +1,4 @@
+-/* Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
++/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 and
+@@ -28,6 +28,7 @@
+ 
+ #define RESTRK_1080P_MIN_PERF_LEVEL RESTRK_1080P_VGA_PERF_LEVEL
+ #define RESTRK_1080P_MAX_PERF_LEVEL RESTRK_1080P_1080P_PERF_LEVEL
++
+ struct res_trk_context {
+ 	struct device *device;
+ 	u32 irq_num;
+@@ -40,6 +41,10 @@
+ 	struct regulator *footswitch;
+ 	struct msm_vidc_platform_data *vidc_platform_data;
+ 	int memtype;
++#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
++	int fw_mem_type;
++	int cmd_mem_type;
++#endif
+ #ifdef CONFIG_MSM_BUS_SCALING
+ 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
+ 	uint32_t     pcl;
+@@ -48,19 +53,29 @@
+ 	struct ddl_buf_addr firmware_addr;
+ 	struct ion_client *res_ion_client;
+ 	u32 disable_dmx;
++	u32 disable_fullhd;
++	enum ddl_mem_area res_mem_type;
++	u32 mmu_clks_on;
++#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
++	u32 secure_session;
++	struct mutex secure_lock;
++#endif
+ };
+ 
+-#if DEBUG
++/*HTC_START*/
++extern u32 vidc_msg_debug;
+ 
+-#define VCDRES_MSG_LOW(xx_fmt...)	printk(KERN_INFO "\n\t* [VID] " xx_fmt)
+-#define VCDRES_MSG_MED(xx_fmt...)	printk(KERN_INFO "\n  * [VID] " xx_fmt)
++#define VCDRES_MSG_LOW(xx_fmt...)			\
++	if (vidc_msg_debug) {				\
++		printk(KERN_INFO "\n\t* [VID] " xx_fmt);\
++	}
++
++#define VCDRES_MSG_MED(xx_fmt...)			\
++	if (vidc_msg_debug) {				\
++		printk(KERN_INFO "\n  * [VID] " xx_fmt);\
++	}
++/*HTC_END*/
+ 
+-#else
+-
+-#define VCDRES_MSG_LOW(xx_fmt...)
+-#define VCDRES_MSG_MED(xx_fmt...)
+-
+-#endif
+ 
+ #define VCDRES_MSG_HIGH(xx_fmt...)	printk(KERN_WARNING "\n [VID] " xx_fmt)
+ #define VCDRES_MSG_ERROR(xx_fmt...)	printk(KERN_ERR "\n [VID] err: " xx_fmt)

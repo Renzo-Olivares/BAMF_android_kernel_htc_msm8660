@@ -1,0 +1,51 @@
+--- arch/arm/mach-msm/Kconfig	2013-04-20 02:33:28.183486808 -0700
++++ arch/arm/mach-msm/Kconfig	2013-04-20 02:30:35.365042796 -0700
+@@ -886,6 +963,19 @@
+ 	bool "Knight"
+ 	help
+ 	  Support for the HTC Knight
++
++config MACH_RUNNYMEDE
++	depends on ARCH_MSM7X30
++	bool "Runnymede"
++	select ARCH_SPARSEMEM_ENABLE
++	select MEMORY_HOTPLUG
++	select MEMORY_HOTREMOVE
++	select ARCH_ENABLE_MEMORY_HOTPLUG
++	select ARCH_ENABLE_MEMORY_HOTREMOVE
++	select ARCH_MEMORY_PROBE
++	select ARCH_MEMORY_REMOVE
++	help
++	  Support for the HTC Runnymede
+ endmenu
+ 
+ config MSM_MDP40
+@@ -1820,10 +1944,10 @@
+ 	  testing.
+ 
+ config HTC_OFFMODE_ALARM
+-       bool "Enables HTC offmode alarm."
+-       default n
+-       help
+-               support HTC offmode alarm.
++	bool "Enables HTC offmode alarm."
++	default n
++	help
++		support HTC offmode alarm.
+ 
+ config HTC_QUICKBOOT_OFFMODE_ALARM
+         bool "Support HTC quickboot offmode alarm."
+@@ -2309,6 +2475,13 @@
+ 	  Enable the vibrator support on MSM over RPC. The vibrator
+ 	  is connected on the PMIC. Say Y if you want to enable this
+ 	  feature.
++config RPC_VER_60001
++	bool "rpc ver 60001"
++	depends on MSM_ONCRPCROUTER
++        help
++          Enable the vibrator support on MSM over RPC. The vibrator
++          is connected on the PMIC. Say Y if you want to enable this
++          feature.
+ 
+ config PM8XXX_RPC_VIBRATOR
+ 	bool "RPC based Vibrator on PM8xxx PMICs"

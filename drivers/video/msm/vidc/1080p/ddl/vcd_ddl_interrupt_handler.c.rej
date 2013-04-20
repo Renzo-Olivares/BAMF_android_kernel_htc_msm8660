@@ -1,0 +1,51 @@
+--- drivers/video/msm/vidc/1080p/ddl/vcd_ddl_interrupt_handler.c	2013-04-20 02:33:28.207487145 -0700
++++ drivers/video/msm/vidc/1080p/ddl/vcd_ddl_interrupt_handler.c	2013-04-20 02:30:38.457086445 -0700
+@@ -1,4 +1,4 @@
+-/* Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
++/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 and
+@@ -15,6 +15,7 @@
+ #include "vcd_ddl.h"
+ #include "vcd_ddl_shared_mem.h"
+ #include "vcd_ddl_metadata.h"
++#include "vcd_res_tracker_api.h"
+ #include <linux/delay.h>
+ 
+ static void ddl_decoder_input_done_callback(
+@@ -30,10 +31,6 @@
+ 	u32 profile, u32 level);
+ static void ddl_handle_enc_frame_done(struct ddl_client_context *ddl);
+ 
+-/* HTC_START */
+-extern int mTotalErrorFrames;
+-/* HTC_END */
+-
+ static void ddl_fw_status_done_callback(struct ddl_context *ddl_context)
+ {
+ 	DDL_MSG_MED("ddl_fw_status_done_callback");
+@@ -262,6 +259,13 @@
+ 		DDL_MSG_LOW("HEADER_DONE");
+ 		vidc_1080p_get_decode_seq_start_result(&seq_hdr_info);
+ 		parse_hdr_size_data(ddl, &seq_hdr_info);
++		if (res_trk_get_disable_fullhd() &&
++			(seq_hdr_info.img_size_x * seq_hdr_info.img_size_y >
++				1280 * 720)) {
++			DDL_MSG_ERROR("FATAL:Resolution greater than 720P HD");
++			ddl_client_fatal_cb(ddl);
++			return process_further;
++		}
+ 		if (!seq_hdr_info.img_size_x || !seq_hdr_info.img_size_y) {
+ 			DDL_MSG_ERROR("FATAL:ZeroImageSize");
+ 			ddl_client_fatal_cb(ddl);
+@@ -402,9 +406,6 @@
+ 				}
+ 				DDL_MSG_HIGH("%s : sending port reconfig\n",
+ 					 __func__);
+-				/* HTC_START */
+-				mTotalErrorFrames = 0;
+-				/* HTC_END */
+ 				ddl_context->ddl_callback(
+ 					VCD_EVT_IND_OUTPUT_RECONFIG,
+ 					VCD_S_SUCCESS, payload,
