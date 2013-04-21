@@ -51,7 +51,12 @@ struct q6v2audio_analog_ops {
 	void (*fm_speaker_enable)(int en);
 	void (*voltage_on) (int on);
 };
-
+struct q6v2audio_icodec_ops {
+	int (*support_aic3254) (void);
+	int (*support_adie) (void);
+	int (*is_msm_i2s_slave) (void);
+	int (*support_aic3254_use_mclk) (void);
+};
 struct q6v2audio_aic3254_ops {
 	void (*aic3254_set_mode)(int config, int mode);
 };
@@ -64,5 +69,6 @@ struct aic3254_info {
 int update_aic3254_info(struct aic3254_info *info);
 void htc_8x60_register_analog_ops(struct q6v2audio_analog_ops *ops);
 void htc_8x60_register_aic3254_ops(struct q6v2audio_aic3254_ops *ops);
-
+int update_aic3254_info(struct aic3254_info *info);
+void htc_8x60_register_icodec_ops(struct q6v2audio_icodec_ops *ops);
 #endif

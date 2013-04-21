@@ -1,19 +1,34 @@
-/* Copyright (c) 2009-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2009-2011, Code Aurora Forum. All rights reserved.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of Code Aurora Forum, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
 #ifndef __MACH_QDSP6_V2_SNDDEV_H
 #define __MACH_QDSP6_V2_SNDDEV_H
 #include <mach/qdsp5v2/audio_def.h>
-#include <sound/q6afe.h>
 
 #define AUDIO_DEV_CTL_MAX_DEV 64
 #define DIR_TX	2
@@ -23,8 +38,12 @@
 #define COPP_IGNORE	0xffffffff
 #define SESSION_IGNORE 0x0UL
 
+/* 8 concurrent sessions with Q6 possible,  session:0
+   reserved in DSP */
 #define MAX_SESSIONS 0x09
 
+/* This represents Maximum bit needed for representing sessions
+   per clients, MAX_BIT_PER_CLIENT >= MAX_SESSIONS */
 #define MAX_BIT_PER_CLIENT 16
 
 #define VOICE_STATE_INVALID 0x0
@@ -55,12 +74,12 @@ struct msm_snddev_info {
 	u32 set_sample_rate;
 	u64 sessions;
 	int usage_count;
-	s32 max_voc_rx_vol[VOC_RX_VOL_ARRAY_NUM]; 
+	s32 max_voc_rx_vol[VOC_RX_VOL_ARRAY_NUM]; /* [0] is for NB,[1] for WB */
 	s32 min_voc_rx_vol[VOC_RX_VOL_ARRAY_NUM];
 };
 
 struct msm_volume {
-	int volume; 
+	int volume; /* Volume parameter, in % Scale */
 	int pan;
 };
 
@@ -92,8 +111,6 @@ int msm_clear_session_id(int session_id);
 
 int msm_reset_all_device(void);
 
-int reset_device(void);
-
 int msm_clear_all_session(void);
 
 struct msm_snddev_info *audio_dev_ctrl_find_dev(u32 dev_id);
@@ -105,12 +122,13 @@ int snddev_voice_set_volume(int vol, int path);
 int msm_get_call_state(void);
 
 struct auddev_evt_voc_devinfo {
-	u32 dev_type; 
-	u32 acdb_dev_id; 
-	u32 dev_sample;  
-	s32 max_rx_vol[VOC_RX_VOL_ARRAY_NUM]; 
-	s32 min_rx_vol[VOC_RX_VOL_ARRAY_NUM]; 
-	u32 dev_id; 
+	u32 dev_type; /* Rx or Tx */
+	u32 acdb_dev_id; /* acdb id of device */
+	u32 dev_sample;  /* Sample rate of device */
+	s32 max_rx_vol[VOC_RX_VOL_ARRAY_NUM]; /* unit is mb (milibel),
+						[0] is for NB, other for WB */
+	s32 min_rx_vol[VOC_RX_VOL_ARRAY_NUM]; /* unit is mb */
+	u32 dev_id; /* registered device id */
 	u32 dev_port_id;
 };
 
@@ -130,7 +148,6 @@ union msm_vol_mute {
 struct auddev_evt_voc_mute_info {
 	u32 dev_type;
 	u32 acdb_dev_id;
-	u32 voice_session_id;
 	union msm_vol_mute dev_vm_val;
 };
 
@@ -148,7 +165,6 @@ union auddev_evt_data {
 	s32 session_vol;
 	s32 voice_state;
 	struct auddev_evt_audcal_info audcal_info;
-	u32 voice_session_id;
 };
 
 struct message_header {
@@ -156,23 +172,23 @@ struct message_header {
 	uint32_t data_len;
 };
 
-#define AUDDEV_EVT_DEV_CHG_VOICE 0x01 
-#define AUDDEV_EVT_DEV_RDY 0x02 
-#define AUDDEV_EVT_DEV_RLS 0x04 
-#define AUDDEV_EVT_REL_PENDING 0x08 
-#define AUDDEV_EVT_DEVICE_VOL_MUTE_CHG 0x10 
-#define AUDDEV_EVT_START_VOICE 0x20 
-#define AUDDEV_EVT_END_VOICE 0x40 
-#define AUDDEV_EVT_STREAM_VOL_CHG 0x80 
-#define AUDDEV_EVT_FREQ_CHG 0x100 
-#define AUDDEV_EVT_VOICE_STATE_CHG 0x200 
+#define AUDDEV_EVT_DEV_CHG_VOICE 0x01 /* device change event */
+#define AUDDEV_EVT_DEV_RDY 0x02 /* device ready event */
+#define AUDDEV_EVT_DEV_RLS 0x04 /* device released event */
+#define AUDDEV_EVT_REL_PENDING 0x08 /* device release pending */
+#define AUDDEV_EVT_DEVICE_VOL_MUTE_CHG 0x10 /* device volume changed */
+#define AUDDEV_EVT_START_VOICE 0x20 /* voice call start */
+#define AUDDEV_EVT_END_VOICE 0x40 /* voice call end */
+#define AUDDEV_EVT_STREAM_VOL_CHG 0x80 /* device volume changed */
+#define AUDDEV_EVT_FREQ_CHG 0x100 /* Change in freq */
+#define AUDDEV_EVT_VOICE_STATE_CHG 0x200 /* Change in voice state */
 
-#define AUDDEV_CLNT_VOC 0x1 
-#define AUDDEV_CLNT_DEC 0x2 
-#define AUDDEV_CLNT_ENC 0x3 
-#define AUDDEV_CLNT_AUDIOCAL 0x4 
+#define AUDDEV_CLNT_VOC 0x1 /*Vocoder clients*/
+#define AUDDEV_CLNT_DEC 0x2 /*Decoder clients*/
+#define AUDDEV_CLNT_ENC 0x3 /* Encoder clients */
+#define AUDDEV_CLNT_AUDIOCAL 0x4 /* AudioCalibration client */
 
-#define AUDIO_DEV_CTL_MAX_LISTNER 20 
+#define AUDIO_DEV_CTL_MAX_LISTNER 20 /* Max Listeners Supported */
 
 struct msm_snd_evt_listner {
 	uint32_t evt_id;
@@ -189,7 +205,7 @@ struct msm_snd_evt_listner {
 struct event_listner {
 	struct msm_snd_evt_listner *cb;
 	u32 num_listner;
-	int state;  
+	int state; /* Call state */ /* TODO remove this if not req*/
 };
 
 extern struct event_listner event;
@@ -209,13 +225,14 @@ int msm_snddev_withdraw_freq(u32 session_id,
 int msm_device_is_voice(int dev_id);
 int msm_get_voc_freq(int *tx_freq, int *rx_freq);
 int msm_snddev_get_enc_freq(int session_id);
-int msm_set_voice_vol(int dir, s32 volume, u32 session_id);
-int msm_set_voice_mute(int dir, int mute, u32 session_id);
+int msm_set_voice_vol(int dir, s32 volume);
+int msm_set_voice_mute(int dir, int mute);
 int msm_get_voice_state(void);
 int msm_enable_incall_recording(int popp_id, int rec_mode, int rate,
 				int channel_mode);
 int msm_disable_incall_recording(uint32_t popp_id, uint32_t rec_mode);
 void msm_set_voc_freq(int tx_freq, int rx_freq);
+
 struct dev_ctrl_ops {
 	int (*support_opendsp) (void);
 };

@@ -89,6 +89,13 @@ struct audio_copp_topology {
 	int topolog_id[MAX_SESSIONS];
 };
 static struct audio_copp_topology adm_tx_topology_tbl;
+static struct dev_ctrl_ops default_ctrl_ops;
+static struct dev_ctrl_ops *ctrl_ops = &default_ctrl_ops;
+
+void htc_8x60_register_dev_ctrl_ops(struct dev_ctrl_ops *ops)
+{
+	ctrl_ops = ops;
+}
 
 int msm_reset_all_device(void)
 {

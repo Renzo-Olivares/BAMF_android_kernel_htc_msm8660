@@ -49,7 +49,8 @@
 #define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
 
 bool msm_codec_i2s_slave_mode = 1;
-
+static struct q6v2audio_icodec_ops default_audio_ops;
+static struct q6v2audio_icodec_ops *audio_ops = &default_audio_ops;
 static struct q6v2audio_aic3254_ops default_aic3254_ops;
 static struct q6v2audio_aic3254_ops *aic3254_ops = &default_aic3254_ops;
 
@@ -689,6 +690,10 @@ int snddev_icodec_set_device_volume(struct msm_snddev_info *dev_info,
 	rc = 0;
 	
 	return rc;
+}
+void htc_8x60_register_icodec_ops(struct q6v2audio_icodec_ops *ops)
+{
+	audio_ops = ops;
 }
 
 static int snddev_icodec_probe(struct platform_device *pdev)
