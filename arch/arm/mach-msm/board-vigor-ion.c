@@ -26,6 +26,23 @@ extern void pmem_request_smi_region(void *data);
 extern void pmem_release_smi_region(void *data);
 extern void *pmem_setup_smi_region(void);
 
+// #define MSM_ION_CAMERA_BASE   0x40E00000
+ #define MSM_ION_AUDIO_BASE    0x6FB00000
+// 
+// #define MSM_ION_ROTATOR_SIZE  0x654000
+// #define MSM_ION_MM_FW_SIZE    0x200000
+// #define MSM_ION_MM_SIZE       0x3D00000
+// #define MSM_ION_MFC_SIZE      0x100000
+// #define MSM_ION_CAMERA_SIZE   0x2000000
+// #define MSM_ION_SF_SIZE       0x4000000
+// #define MSM_ION_AUDIO_SIZE	  0x4CF000
+// 
+// #ifdef CONFIG_TZCOM
+// #define MSM_ION_QSECOM_SIZE   0xC7000
+// #define MSM_ION_HEAP_NUM      9
+// #else
+// #define MSM_ION_HEAP_NUM      8
+// #endif
 
 static int request_smi_region(void *data)
 {
@@ -116,10 +133,10 @@ static struct ion_platform_data ion_pdata = {
 			.extra_data = (void *) &co_ion_pdata,
 		},
 		{
-			.id	= ION_CP_MFC_HEAP_ID,
-			.type	= ION_HEAP_TYPE_CP,
-			.name	= ION_MFC_HEAP_NAME,
-			.size	= MSM_ION_MFC_SIZE,
+			.id	= ION_CP_ROTATOR_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_ROTATOR_HEAP_NAME,
+			.size	= MSM_ION_ROTATOR_SIZE,
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = &co_ion_pdata,
 		},
@@ -136,6 +153,7 @@ static struct ion_platform_data ion_pdata = {
 			.id	= ION_AUDIO_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
 			.name	= ION_AUDIO_HEAP_NAME,
+			.base	= MSM_ION_AUDIO_BASE,
 			.size	= MSM_ION_AUDIO_SIZE,
 			.memory_type = ION_EBI_TYPE,
 			.extra_data = (void *) &co_ion_pdata,
@@ -149,37 +167,6 @@ static struct platform_device ion_dev = {
 	.dev = { .platform_data = &ion_pdata },
 };
 
-#ifdef CONFIG_ANDROID_PMEM
-static unsigned pmem_size = MSM_PMEM_SIZE;
-static unsigned pmem_param_set = 0;
-static int __init pmem_size_setup(char *p)
-{
-	pmem_size = memparse(p, NULL);
-	pmem_param_set = 1;
-	return 0;
-}
-early_param("pmem_size", pmem_size_setup);
-
-static unsigned pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
-
-static int __init pmem_adsp_size_setup(char *p)
-{
-	pmem_adsp_size = memparse(p, NULL);
-	return 0;
-}
-early_param("pmem_adsp_size", pmem_adsp_size_setup);
-
-static unsigned pmem_audio_size = MSM_PMEM_AUDIO_SIZE;
-
-static int __init pmem_audio_size_setup(char *p)
-{
-	pmem_audio_size = memparse(p, NULL);
-	return 0;
-}
-early_param("pmem_audio_size", pmem_audio_size_setup);
-#endif
-
-
 int __init vigor_ion_reserve_memory(struct memtype_reserve *table) {
 	table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
 	table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
@@ -188,12 +175,12 @@ int __init vigor_ion_reserve_memory(struct memtype_reserve *table) {
 	table[MEMTYPE_EBI1].size += MSM_ION_QSECOM_SIZE;
 #endif
 	table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
-// 	table[MEMTYPE_EBI1].size += MSM_ION_ROTATOR_SIZE;
+	table[MEMTYPE_EBI1].size += MSM_ION_ROTATOR_SIZE;
 	table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
 	return 0;
 }
 
-int __init pyramid_ion_init(void) {
+int __init vigor_ion_init(void) {
 	platform_device_register(&ion_dev);
 	return 0;
 }
