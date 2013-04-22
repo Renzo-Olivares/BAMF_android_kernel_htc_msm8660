@@ -33,6 +33,7 @@ struct snddev_icodec_data {
 
 struct snddev_icodec_state {
 	struct snddev_icodec_data *data;
+	struct adie_codec_path *adie_path;
 	u32 sample_rate;
 	u32 enabled;
 };

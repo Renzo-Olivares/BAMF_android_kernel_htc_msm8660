@@ -498,7 +498,43 @@ static int snddev_icodec_close_tx(struct snddev_icodec_state *icodec)
 	wake_unlock(&drv->tx_idlelock);
 	return 0;
 }
+#if 0
+static int snddev_icodec_set_device_volume_impl(
+		struct msm_snddev_info *dev_info, u32 volume)
+{
+	struct snddev_icodec_state *icodec;
 
+	int rc = 0;
+
+	icodec = dev_info->private_data;
+
+	if (icodec->data->dev_vol_type & SNDDEV_DEV_VOL_DIGITAL) {
+
+		rc = adie_codec_set_device_digital_volume(icodec->adie_path,
+				icodec->data->channel_mode, volume);
+		if (rc < 0) {
+			pr_err("%s: unable to set_device_digital_volume for"
+				"%s volume in percentage = %u\n",
+				__func__, dev_info->name, volume);
+			return rc;
+		}
+
+	} else if (icodec->data->dev_vol_type & SNDDEV_DEV_VOL_ANALOG) {
+		rc = adie_codec_set_device_analog_volume(icodec->adie_path,
+				icodec->data->channel_mode, volume);
+		if (rc < 0) {
+			pr_err("%s: unable to set_device_analog_volume for"
+				"%s volume in percentage = %u\n",
+				__func__, dev_info->name, volume);
+			return rc;
+		}
+	} else {
+		pr_err("%s: Invalid device volume control\n", __func__);
+		return -EPERM;
+	}
+	return rc;
+}
+#endif
 static int snddev_icodec_open(struct msm_snddev_info *dev_info)
 {
 	int rc = 0;
