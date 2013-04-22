@@ -3104,7 +3104,7 @@ static void __init msm8x60_init_dsps(void)
 */
 #define MSM_PMEM_TZCOM_SIZE      0xC7000
 
-#define MSM_FB_BASE              0x40400000
+
 
 #define MSM_SMI_BASE				0x38000000
 #define MSM_SMI_SIZE				0x4000000
@@ -7589,9 +7589,9 @@ static void __init msm8x60_calculate_reserve_sizes(void)
 
 static int msm8x60_paddr_to_memtype(unsigned int paddr)
 {
-	if (paddr >= 0x40000000 && paddr < 0x70000000)
+	if (paddr >= 0x40000000 && paddr < 0x80000000)
 		return MEMTYPE_EBI1;
-	if (paddr >= 0x38000000 && paddr < 0x40000000)
+	if (paddr >= 0x38000000 && paddr < 0x60000000)
 		return MEMTYPE_SMI;
 	return MEMTYPE_NONE;
 }
@@ -7915,14 +7915,6 @@ static void __init vigor_init(void)
 	msm8x60_init(&htc_vigor_board_data);
 	printk(KERN_INFO "%s revision=%d engineerid=%d\n", __func__, system_rev, engineerid);
 }
-
-/* PHY_BASE_ADDR1 should be 8 MB alignment */
-/* 0x48000000~0x48700000 is reserved for Vigor 8K AMSS */
-#define PHY_BASE_ADDR1  0x48800000
-/* 0x40400000~0x42A00000 is 38MB for SF/AUDIO/FB PMEM */
-/* 0x48800000~0x7CC00000 is 836MB for APP */
-/* 0x7CC00000~0x80000000 is 52MB for ADSP PMEM */
-#define SIZE_ADDR1	  0x28000000
 
 static void __init vigor_fixup(struct machine_desc *desc, struct tag *tags,
 				 char **cmdline, struct meminfo *mi)

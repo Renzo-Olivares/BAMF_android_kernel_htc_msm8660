@@ -32,6 +32,38 @@
 #endif
 #include <mach/msm_bus.h>
 
+#ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
+#define MSM_PMEM_SIZE 0x8200000 /* 130 Mbytes */
+#else
+#define MSM_PMEM_SIZE 0x8200000 /* 130 Mbytes */
+#endif
+
+#define MSM_ION_CAMERA_BASE   0x40E00000
+// #define MSM_ION_AUDIO_BASE    0x6FB00000
+#define MSM_PMEM_ADSP_SIZE         0x6D00000
+#define MSM_PMEM_ADSP2_SIZE        0x730000
+#define MSM_PMEM_AUDIO_SIZE        0x4CF000
+#define MSM_ION_MM_FW_SIZE	0x200000 
+#ifdef CONFIG_MSM_IOMMU
+#define MSM_ION_MM_SIZE		0x4700000
+#else
+#define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE - MSM_PMEM_ADSP2_SIZE
+#define MSM_ION_ROTATOR_SIZE	MSM_PMEM_ADSP2_SIZE
+#endif
+#define MSM_ION_MFC_SIZE      SZ_8K
+#define MSM_ION_CAMERA_SIZE   0x2000000
+#define MSM_PMEM_KERNEL_EBI1_SIZE  0x280000
+#define MSM_ION_SF_SIZE		0x4800000
+#define MSM_ION_AUDIO_SIZE	  0x4CF000
+
+#ifdef CONFIG_TZCOM
+#define MSM_ION_QSECOM_SIZE   0x600000
+#define MSM_ION_HEAP_NUM      9
+#else
+#define MSM_ION_HEAP_NUM      8
+#endif
+#define MSM_LIQUID_ION_MM_SIZE (MSM_ION_MM_SIZE + 0x600000)
+
 struct msm_camera_io_ext {
 	uint32_t mdcphy;
 	uint32_t mdcsz;

@@ -25,6 +25,15 @@
 #define MSM_RAM_CONSOLE_SIZE	MSM_HTC_RAM_CONSOLE_SIZE
 
 #define MSM_FB_WRITEBACK_BASE 0x46C00000
+#define MSM_FB_BASE              0x40400000
+/* PHY_BASE_ADDR1 should be 8 MB alignment */
+/* 0x48000000~0x48700000 is reserved for Vigor 8K AMSS */
+#define PHY_BASE_ADDR1  0x48800000
+/* 0x40400000~0x42A00000 is 38MB for SF/AUDIO/FB PMEM */
+/* 0x48800000~0x7CC00000 is 836MB for APP */
+/* 0x7CC00000~0x80000000 is 52MB for ADSP PMEM */
+#define SIZE_ADDR1	  0x28000000
+
 
 /* GPIO definition */
 #define PMGPIO(x)	(x-1)
