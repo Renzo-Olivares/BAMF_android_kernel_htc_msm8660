@@ -3245,6 +3245,13 @@ static void __init msm8x60_allocate_memory_regions(void)
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 		size, __va(msm_fb_resources[0].start),
 		(unsigned long)msm_fb_resources[0].start);
+#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
+	size = MSM_FB_WRITEBACK_SIZE;
+	msm_fb_resources[1].start = MSM_FB_WRITEBACK_BASE;
+	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
+	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
+		size, __va(MSM_FB_WRITEBACK_BASE), (unsigned long) MSM_FB_WRITEBACK_BASE);
+#endif
 }
 
 
