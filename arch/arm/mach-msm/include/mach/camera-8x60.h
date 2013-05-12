@@ -371,7 +371,6 @@ struct msm_pmem_region {
 	unsigned long len;
 	struct file *file;
 	struct msm_pmem_info info;
-    struct ion_handle *handle;
 };
 
 struct axidata {
