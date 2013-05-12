@@ -337,7 +337,7 @@ int vigor_support_adie(void)
 
 int vigor_support_back_mic(void)
 {
-	return 1;
+	return 0;
 }
 
 int vigor_is_msm_i2s_master(void)
