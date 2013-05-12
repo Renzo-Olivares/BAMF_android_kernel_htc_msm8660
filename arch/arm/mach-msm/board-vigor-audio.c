@@ -313,10 +313,12 @@ int vigor_support_beats(void)
 
 void vigor_enable_beats(int en)
 {
-    pr_aud_info("%s: %d\n", __func__, en);
-    set_beats_on(en);
+	pr_aud_info("%s: %d\n", __func__, en);
+	if (en)
+		adie_codec_set_device_analog_volume(NULL, 2, 0x04);
+	else
+		adie_codec_set_device_analog_volume(NULL, 2, 0x14);
 }
-
 int vigor_is_msm_i2s_slave(void)
 {
 	/* 1 - CPU slave, 0 - CPU master */
@@ -335,7 +337,7 @@ int vigor_support_adie(void)
 
 int vigor_support_back_mic(void)
 {
-	return 0;
+	return 1;
 }
 
 int vigor_is_msm_i2s_master(void)
