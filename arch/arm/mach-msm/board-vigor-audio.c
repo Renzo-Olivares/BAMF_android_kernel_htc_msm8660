@@ -420,7 +420,7 @@ void __init vigor_audio_init(void)
 	htc_8x60_register_ecodec_ops(&eops);
 	htc_8x60_register_icodec_ops(&iops);
 	htc_8x60_register_dev_ctrl_ops(&dops);
-	htc_8x60_register_q6asm_ops(&qops);
+	htc_register_q6asm_ops(&qops);
 	acoustic_register_ops(&acoustic);
 
 	/* PMIC GPIO Init (See board-vigor.c) */
