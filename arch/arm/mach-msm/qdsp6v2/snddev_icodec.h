@@ -19,6 +19,8 @@ struct snddev_icodec_data {
 	u32 capability; 
 	const char *name;
 	u32 copp_id; 
+    /* Adie profile */
+	struct adie_codec_dev_profile *profile;
 	u8 channel_mode;
 	u32 default_sample_rate;
 	int (*pamp_on) (void);
@@ -42,6 +44,7 @@ struct q6v2audio_analog_ops {
 	void (*speaker_enable)(int en);
 	void (*headset_enable)(int en);
 	void (*handset_enable)(int en);
+    void (*bt_sco_enable)(int en);
 	void (*headset_speaker_enable)(int en);
 	void (*int_mic_enable)(int en);
 	void (*back_mic_enable)(int en);

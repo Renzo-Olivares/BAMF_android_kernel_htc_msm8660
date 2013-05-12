@@ -22,7 +22,7 @@
 #include <linux/gfp.h>
 #include <linux/uaccess.h>
 #include <linux/slab.h>
-#include <linux/switch.h>
+#include <linux/mfd/msm-adie-codec.h>
 #include "qdsp6v2/snddev_icodec.h"
 #include "qdsp6v2/snddev_ecodec.h"
 #include <mach/qdsp6v2/audio_dev_ctl.h>
@@ -61,7 +61,8 @@
 #define ACOUSTIC_GET_BEATS_STATE	_IOW(ACOUSTIC_IOCTL_MAGIC, 41, unsigned)
 #define ACOUSTIC_ENABLE_BEATS		_IOW(ACOUSTIC_IOCTL_MAGIC, 42, unsigned)
 #define ACOUSTIC_SET_Q6_EFFECT		_IOW(ACOUSTIC_IOCTL_MAGIC, 43, unsigned)
-#define ACOUSTIC_UPDATE_BEATS_STATUS	_IOW(ACOUSTIC_IOCTL_MAGIC, 47, unsigned)
+#define ACOUSTIC_UPDATE_BEATS_STATUS  _IOW(ACOUSTIC_IOCTL_MAGIC, 47, unsigned)
+
 
 #define D(fmt, args...) printk(KERN_INFO "[AUD] htc-acoustic: "fmt, ##args)
 #define E(fmt, args...) printk(KERN_ERR "[AUD] htc-acoustic: "fmt, ##args)
@@ -80,7 +81,6 @@ static struct mutex api_lock;
 static struct mutex rpc_connect_lock;
 static struct acoustic_ops default_acoustic_ops;
 static struct acoustic_ops *the_ops = &default_acoustic_ops;
-static struct switch_dev sdev_beats;
 
 struct acdb_id {
 	u32 tx_dev_id;
@@ -107,6 +107,7 @@ enum {
 
 struct class *htc_class;
 void *htc_adie_table;
+uint32_t action_offset;
 
 struct profile_action_info {
 	u32 act_sz;
@@ -172,8 +173,108 @@ acoustic_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 		D("setting size = %d\n", sz);
+
+		kfree(htc_adie_table);
+		htc_adie_table = NULL;
+
+		if (!htc_adie_table) {
+			/* allocate 4 pages for adie table*/
+			htc_adie_table = kzalloc(16384, GFP_KERNEL);
+			if (!htc_adie_table) {
+				E("cannot allocate enough memory.\n");
+				rc = -EINVAL;
+				break;
+			}
+			action_offset = 0;
+		}
+
 		break;
 	case ACOUSTIC_UPDATE_ADIE: {
+		int support_adie = 0;
+		int i, j, setting_sz;
+		int reg_dev = 0;
+		struct profile_action_info act_info;
+		struct snddev_icodec_state *icodec;
+		struct adie_codec_hwsetting_entry *entry;
+		struct adie_codec_action_unit *htc_adie_ptr;
+
+		if (the_ops->support_adie)
+			support_adie = the_ops->support_adie();
+
+		if (!support_adie)
+			break;
+
+		pr_aud_info("%s: update adie table\n", __func__);
+
+		if (copy_from_user(&act_info, (void *)arg,
+			sizeof(struct profile_action_info))) {
+			E("copy_from_user failed\n");
+			rc = -EFAULT;
+			break;
+		}
+
+		if (act_info.act_sz < 1) {
+			E("can't update setting of %s without"
+				"active action\n", act_info.name);
+			rc = -EFAULT;
+			break;
+		}
+
+		/* set un-initialized frequency to default 8K */
+		if (act_info.freq == 0)
+			act_info.freq = 8000;
+
+		/* got registry devices through msm_snddev_* API
+		 * which defined in "audio_dev_ctl.h" */
+		reg_dev = msm_snddev_devcount();
+		for (i = 0; i < reg_dev; i++) {
+			dev_info = audio_dev_ctrl_find_dev(i);
+			if (strncmp(act_info.name, dev_info->name,
+				strlen(dev_info->name)) == 0)
+			break;
+		}
+
+		if (i < reg_dev) {
+			icodec = (struct snddev_icodec_state *)dev_info->private_data;
+			setting_sz = icodec->data->profile->setting_sz;
+
+			for (j = 0; j < setting_sz; j++) {
+				entry = icodec->data->profile->settings;
+				if (act_info.freq == entry[j].freq_plan) {
+					htc_adie_ptr =
+					(struct adie_codec_action_unit *)
+					(htc_adie_table + action_offset);
+
+					if (act_info.setting == VOICE_SETTING) {
+						D("Update adie (voice) of %s\n", dev_info->name);
+						entry[j].voc_action = htc_adie_ptr;
+						entry[j].voc_action_sz = act_info.act_sz;
+						} else {
+						D("Update adie (media) of %s\n", dev_info->name);
+						entry[j].midi_action = htc_adie_ptr;
+						entry[j].midi_action_sz = act_info.act_sz;
+						/* assign new setting pass from user space
+						 * default adie setting is for midi */
+						entry[j].actions = htc_adie_ptr;
+						entry[j].action_sz = act_info.act_sz;
+						}
+
+						break;
+				}
+			}
+			if (j >= setting_sz) {
+				E("can't find device with frequency %d\n",
+				  act_info.freq);
+				rc = -EFAULT;
+			}
+		} else {
+			D("can't find registry device with name %s\n", act_info.name);
+			rc = -EFAULT;
+		}
+
+		/* calculate next address of action presentation */
+		action_offset +=
+			act_info.act_sz * sizeof(struct adie_codec_action_unit);
 		break;
 	}
 	case ACOUSTIC_UPDATE_ACDB:
@@ -431,24 +532,6 @@ acoustic_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			the_ops->set_q6_effect(mode);
 		break;
 	}
-	case ACOUSTIC_UPDATE_BEATS_STATUS: {
-		int new_state = -1;
-
-		if (copy_from_user(&new_state, (void *)arg, sizeof(new_state))) {
-			rc = -EFAULT;
-			break;
-		}
-		D("Update Beats Status : %d\n", new_state);
-		if (new_state < -1 || new_state > 1) {
-			E("Invalid Beats status update");
-			rc = -EINVAL;
-			break;
-		}
-
-		sdev_beats.state = -1;
-		switch_set_state(&sdev_beats, new_state);
-		break;
-	}
 	default:
 		rc = -EINVAL;
 	}
@@ -481,10 +564,6 @@ done:
 	return rc;
 }
 
-static ssize_t beats_print_name(struct switch_dev *sdev, char *buf)
-{
-	return sprintf(buf, "Beats\n");
-}
 
 static struct file_operations acoustic_fops = {
 	.owner = THIS_MODULE,
@@ -572,15 +651,6 @@ static int __init acoustic_init(void)
 	if (ret < 0)
 		goto err_create_class_device;
 
-	sdev_beats.name = "Beats";
-	sdev_beats.print_name = beats_print_name;
-
-	ret = switch_dev_register(&sdev_beats);
-	if (ret < 0) {
-		pr_err("failed to register beats switch device!\n");
-		goto err_create_switch_device;
-	}
-
 #if defined(CONFIG_HTC_HEADSET_MGR)
 	{
 		struct headset_notifier notifier;
@@ -591,8 +661,7 @@ static int __init acoustic_init(void)
 #endif
 
 	return 0;
-err_create_switch_device:
-	device_remove_file(acoustic_misc.this_device, &dev_attr_sysattr);
+
 err_create_class_device:
 	device_destroy(htc_class, 0);
 err_create_class:

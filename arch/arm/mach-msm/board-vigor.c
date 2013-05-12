@@ -3122,6 +3122,7 @@ static int __init fb_size_setup(char *p)
 early_param("fb_size", fb_size_setup);
 
 #ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
 static unsigned pmem_audio_size = MSM_PMEM_AUDIO_SIZE;
 
 static int __init pmem_audio_size_setup(char *p)
@@ -3131,8 +3132,10 @@ static int __init pmem_audio_size_setup(char *p)
 }
 early_param("pmem_audio_size", pmem_audio_size_setup);
 #endif
+#endif
 
 #ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
 static struct android_pmem_platform_data android_pmem_audio_pdata = {
 	.name = "pmem_audio",
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
@@ -3145,7 +3148,7 @@ static struct platform_device android_pmem_audio_device = {
 	.id = 4,
 	.dev = { .platform_data = &android_pmem_audio_pdata },
 };
-
+#endif
 #define PMEM_BUS_WIDTH(_bw) \
 	{ \
 		.vectors = &(struct msm_bus_vectors){ \
@@ -7580,7 +7583,9 @@ static struct platform_device *vigor_devices[] __initdata = {
 	&msm_batt_device,
 #endif
 #ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
 	&android_pmem_audio_device,
+#endif
 #endif
 #ifdef CONFIG_MSM_ROTATOR
 	&msm_rotator_device,
