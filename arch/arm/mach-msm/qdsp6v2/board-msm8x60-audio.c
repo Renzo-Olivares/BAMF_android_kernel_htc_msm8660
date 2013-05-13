@@ -18,7 +18,6 @@
 #include <linux/debugfs.h>
 #include <linux/mfd/pmic8058.h>
 #include <linux/mfd/pmic8901.h>
-#include <linux/mfd/msm-adie-codec.h>
 #include <linux/regulator/consumer.h>
 #include <linux/regulator/machine.h>
 
@@ -34,12 +33,6 @@
 #include "snddev_mi2s.h"
 #include <linux/spi/spi_aic3254.h>
 #include "snddev_virtual.h"
-
-#ifdef CONFIG_MACH_VIGOR
-#include "timpani_profile_8x60_vigor.h"
-#else
-#include "timpani_profile_8x60_lead.h"
-#endif
 
 #undef pr_info
 #undef pr_err

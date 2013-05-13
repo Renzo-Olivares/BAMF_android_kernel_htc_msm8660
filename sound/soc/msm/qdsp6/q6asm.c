@@ -194,6 +194,10 @@ void htc_register_q6asm_ops(struct q6asm_ops *ops)
 {
 	qops = ops;
 }
+void htc_8x60_register_q6asm_ops(struct q6asm_ops *ops)
+{
+	qops = ops;
+}
 
 static int q6asm_session_alloc(struct audio_client *ac)
 {
