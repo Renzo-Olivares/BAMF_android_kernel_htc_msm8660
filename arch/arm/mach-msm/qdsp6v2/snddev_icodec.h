@@ -12,6 +12,7 @@
  */
 #ifndef __MACH_QDSP6V2_SNDDEV_ICODEC_H
 #define __MACH_QDSP6V2_SNDDEV_ICODEC_H
+#include <linux/mfd/msm-adie-codec.h>
 #include <mach/qdsp5v2/audio_def.h>
 #include <mach/pmic.h>
 
@@ -19,8 +20,9 @@ struct snddev_icodec_data {
 	u32 capability; 
 	const char *name;
 	u32 copp_id; 
-    /* Adie profile */
+	
 	struct adie_codec_dev_profile *profile;
+	
 	u8 channel_mode;
 	u32 default_sample_rate;
 	int (*pamp_on) (void);
@@ -28,11 +30,12 @@ struct snddev_icodec_data {
 	int (*voltage_on) (void);
 	void (*voltage_off) (void);
 	u32 dev_vol_type;
+#ifdef CONFIG_MACH_VIGOR
 	u32 aic3254_id;
-	u32 aic3254_voc_id;
-	u32 default_aic3254_id;
+#endif
 };
 
+#ifdef CONFIG_MACH_VIGOR 
 struct snddev_icodec_state {
 	struct snddev_icodec_data *data;
 	struct adie_codec_path *adie_path;
@@ -44,7 +47,6 @@ struct q6v2audio_analog_ops {
 	void (*speaker_enable)(int en);
 	void (*headset_enable)(int en);
 	void (*handset_enable)(int en);
-    void (*bt_sco_enable)(int en);
 	void (*headset_speaker_enable)(int en);
 	void (*int_mic_enable)(int en);
 	void (*back_mic_enable)(int en);
@@ -55,14 +57,10 @@ struct q6v2audio_analog_ops {
 	void (*fm_speaker_enable)(int en);
 	void (*voltage_on) (int on);
 };
+
 struct q6v2audio_icodec_ops {
-	int (*support_aic3254) (void);
 	int (*support_adie) (void);
 	int (*is_msm_i2s_slave) (void);
-	int (*support_aic3254_use_mclk) (void);
-};
-struct q6v2audio_aic3254_ops {
-	void (*aic3254_set_mode)(int config, int mode);
 };
 
 struct aic3254_info {
@@ -72,7 +70,8 @@ struct aic3254_info {
 
 int update_aic3254_info(struct aic3254_info *info);
 void htc_8x60_register_analog_ops(struct q6v2audio_analog_ops *ops);
-void htc_8x60_register_aic3254_ops(struct q6v2audio_aic3254_ops *ops);
-int update_aic3254_info(struct aic3254_info *info);
 void htc_8x60_register_icodec_ops(struct q6v2audio_icodec_ops *ops);
+
+#endif 
+
 #endif

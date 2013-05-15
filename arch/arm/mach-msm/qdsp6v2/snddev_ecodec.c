@@ -27,13 +27,13 @@
 #include "snddev_ecodec.h"
 
 #define ECODEC_SAMPLE_RATE 8000
-static struct q6v2audio_ecodec_ops default_audio_ops;
-static struct q6v2audio_ecodec_ops *audio_ops = &default_audio_ops;
 
+#ifdef CONFIG_MACH_VIGOR
 #undef pr_info
 #undef pr_err
 #define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
+#endif
 
 struct snddev_ecodec_state {
 	struct snddev_ecodec_data *data;
@@ -60,22 +60,60 @@ static struct aux_pcm_state the_aux_pcm_state;
 static int aux_pcm_gpios_request(void)
 {
 	int rc = 0;
+
+#ifdef CONFIG_MACH_VIGOR
 	uint32_t bt_config_gpio[] = {
 		GPIO_CFG(the_aux_pcm_state.dout, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 		GPIO_CFG(the_aux_pcm_state.din, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 		GPIO_CFG(the_aux_pcm_state.syncout, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 		GPIO_CFG(the_aux_pcm_state.clkin_a, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 	};
+
 	gpio_tlmm_config(bt_config_gpio[0], GPIO_CFG_ENABLE);
 	gpio_tlmm_config(bt_config_gpio[1], GPIO_CFG_ENABLE);
 	gpio_tlmm_config(bt_config_gpio[2], GPIO_CFG_ENABLE);
 	gpio_tlmm_config(bt_config_gpio[3], GPIO_CFG_ENABLE);
+#else
+	rc = gpio_request(the_aux_pcm_state.dout, "AUX PCM DOUT");
+	if (rc < 0) {
+		pr_err("%s: GPIO request for AUX PCM DOUT failed\n", __func__);
+		return rc;
+	}
+
+	rc = gpio_request(the_aux_pcm_state.din, "AUX PCM DIN");
+	if (rc < 0) {
+		pr_err("%s: GPIO request for AUX PCM DIN failed\n", __func__);
+		gpio_free(the_aux_pcm_state.dout);
+		return rc;
+	}
+
+	rc = gpio_request(the_aux_pcm_state.syncout, "AUX PCM SYNC OUT");
+	if (rc < 0) {
+		pr_err("%s: GPIO request for AUX PCM SYNC OUT failed\n",
+				__func__);
+		gpio_free(the_aux_pcm_state.dout);
+		gpio_free(the_aux_pcm_state.din);
+		return rc;
+	}
+
+	rc = gpio_request(the_aux_pcm_state.clkin_a, "AUX PCM CLKIN A");
+	if (rc < 0) {
+		pr_err("%s: GPIO request for AUX PCM CLKIN A failed\n",
+				__func__);
+		gpio_free(the_aux_pcm_state.dout);
+		gpio_free(the_aux_pcm_state.din);
+		gpio_free(the_aux_pcm_state.syncout);
+		return rc;
+	}
+#endif
+
 	pr_debug("%s\n", __func__);
 	return rc;
 }
 
 static void aux_pcm_gpios_free(void)
 {
+#ifdef CONFIG_MACH_VIGOR
 	uint32_t bt_config_gpio[] = {
 		GPIO_CFG(the_aux_pcm_state.dout, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 		GPIO_CFG(the_aux_pcm_state.din, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA),
@@ -86,6 +124,12 @@ static void aux_pcm_gpios_free(void)
 	gpio_tlmm_config(bt_config_gpio[1], GPIO_CFG_DISABLE);
 	gpio_tlmm_config(bt_config_gpio[2], GPIO_CFG_DISABLE);
 	gpio_tlmm_config(bt_config_gpio[3], GPIO_CFG_DISABLE);
+#else
+	gpio_free(the_aux_pcm_state.dout);
+	gpio_free(the_aux_pcm_state.din);
+	gpio_free(the_aux_pcm_state.syncout);
+	gpio_free(the_aux_pcm_state.clkin_a);
+#endif
 	pr_debug("%s\n", __func__);
 }
 
@@ -129,9 +173,11 @@ static int get_aux_pcm_gpios(struct platform_device *pdev)
 
 	the_aux_pcm_state.clkin_a = res->start;
 
+#ifdef CONFIG_MACH_VIGOR
 	pr_aud_info("%s: dout = %u, din = %u , syncout = %u, clkin_a =%u\n",
 		__func__, the_aux_pcm_state.dout, the_aux_pcm_state.din,
 		the_aux_pcm_state.syncout, the_aux_pcm_state.clkin_a);
+#endif
 
 	return rc;
 }
@@ -213,7 +259,7 @@ static int snddev_ecodec_open(struct msm_snddev_info *dev_info)
 		goto err_clk;
 	}
 
-	clk_enable(drv->ecodec_clk);
+	clk_prepare_enable(drv->ecodec_clk);
 
 	clk_reset(drv->ecodec_clk, CLK_RESET_DEASSERT);
 
@@ -253,7 +299,7 @@ int snddev_ecodec_close(struct msm_snddev_info *dev_info)
 
 		pr_info("%s: closing all devices\n", __func__);
 
-		clk_disable(drv->ecodec_clk);
+		clk_disable_unprepare(drv->ecodec_clk);
 		aux_pcm_gpios_free();
 
 		afe_close(PCM_RX);
@@ -277,11 +323,6 @@ int snddev_ecodec_set_freq(struct msm_snddev_info *dev_info, u32 rate)
 
 error:
 	return rc;
-}
-
-void htc_8x60_register_ecodec_ops(struct q6v2audio_ecodec_ops *ops)
-{
-	audio_ops = ops;
 }
 
 static int snddev_ecodec_probe(struct platform_device *pdev)

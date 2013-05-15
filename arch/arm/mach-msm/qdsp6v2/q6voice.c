@@ -48,10 +48,12 @@
 
 #define VOC_REC_NONE 0xFF
 
+#ifdef CONFIG_MACH_VIGOR
 #undef pr_info
 #undef pr_err
 #define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
+#endif
 
 struct common_data common;
 

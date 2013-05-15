@@ -112,6 +112,27 @@ static inline void clk_unprepare(struct clk *clk)
  *		  This is only valid once the clock source has been enabled.
  * @clk: clock source
  */
+
+static inline int clk_prepare_enable(struct clk *clk)
+{
+	int ret;
+
+	ret = clk_prepare(clk);
+	if (ret)
+		return ret;
+	ret = clk_enable(clk);
+	if (ret)
+		clk_unprepare(clk);
+
+	return ret;
+}
+
+static inline void clk_disable_unprepare(struct clk *clk)
+{
+	clk_disable(clk);
+	clk_unprepare(clk);
+}
+
 unsigned long clk_get_rate(struct clk *clk);
 
 /**

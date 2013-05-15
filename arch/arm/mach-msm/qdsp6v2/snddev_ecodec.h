@@ -23,9 +23,4 @@ struct snddev_ecodec_data {
 	u32 conf_aux_codec_intf;
 	u32 conf_data_format_padding_val;
 };
-struct q6v2audio_ecodec_ops {
-	void (*bt_sco_enable)(int en);
-};
-
-void htc_8x60_register_ecodec_ops(struct q6v2audio_ecodec_ops *ops);
 #endif

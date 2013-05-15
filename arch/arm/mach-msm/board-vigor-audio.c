@@ -369,7 +369,6 @@ static struct q6v2audio_analog_ops ops = {
 	.headset_enable	        = vigor_snddev_hsed_pamp_on,
 	.handset_enable	        = vigor_snddev_receiver_pamp_on,
 	.headset_speaker_enable	= vigor_snddev_hs_spk_pamp_on,
-	.bt_sco_enable	        = vigor_snddev_bt_sco_pamp_on,
 	.int_mic_enable         = vigor_snddev_imic_pamp_on,
 	.back_mic_enable        = vigor_snddev_bmic_pamp_on,
 	.ext_mic_enable         = vigor_snddev_emic_pamp_on,
@@ -380,29 +379,14 @@ static struct q6v2audio_analog_ops ops = {
 	.voltage_on             = vigor_voltage_on,
 };
 
-static struct q6v2audio_icodec_ops iops = {
-	.support_aic3254 = vigor_support_aic3254,
-	.is_msm_i2s_slave = vigor_is_msm_i2s_slave,
-	.support_adie = vigor_support_adie,
-};
-
-static struct q6v2audio_ecodec_ops eops = {
-	.bt_sco_enable  = vigor_snddev_bt_sco_pamp_on,
-};
-
 static struct acoustic_ops acoustic = {
 	.enable_mic_bias = vigor_mic_enable,
-	.support_aic3254 = vigor_support_aic3254,
 	.support_adie = vigor_support_adie,
 	.support_back_mic = vigor_support_back_mic,
 	.get_speaker_channels = vigor_get_speaker_channels,
 	.support_beats = vigor_support_beats,
 	.enable_beats = vigor_enable_beats,
 	.set_q6_effect = vigor_set_q6_effect_mode,
-};
-
-static struct dev_ctrl_ops dops = {
-	.support_opendsp = vigor_support_opendsp,
 };
 
 static struct q6asm_ops qops = {
@@ -417,10 +401,7 @@ void __init vigor_audio_init(void)
 
 	pr_aud_info("%s\n", __func__);
 	htc_8x60_register_analog_ops(&ops);
-	htc_8x60_register_ecodec_ops(&eops);
-	htc_8x60_register_icodec_ops(&iops);
-	htc_8x60_register_dev_ctrl_ops(&dops);
-	htc_8x60_register_q6asm_ops(&qops);
+	htc_register_q6asm_ops(&qops);
 	acoustic_register_ops(&acoustic);
 
 	/* PMIC GPIO Init (See board-vigor.c) */

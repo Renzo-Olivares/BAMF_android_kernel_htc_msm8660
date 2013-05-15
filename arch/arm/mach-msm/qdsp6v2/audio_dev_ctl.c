@@ -30,10 +30,12 @@
 #define  MAX(x, y) (((x) > (y)) ? (x) : (y))
 #endif
 
+#ifdef CONFIG_MACH_VIGOR
 #undef pr_info
 #undef pr_err
 #define pr_info(fmt, ...) pr_aud_info(fmt, ##__VA_ARGS__)
 #define pr_err(fmt, ...) pr_aud_err(fmt, ##__VA_ARGS__)
+#endif
 
 static DEFINE_MUTEX(session_lock);
 static struct workqueue_struct *msm_reset_device_work_queue;
@@ -52,8 +54,10 @@ struct audio_dev_ctrl_state {
 static struct audio_dev_ctrl_state audio_dev_ctrl;
 struct event_listner event;
 
+#ifdef CONFIG_MACH_VIGOR
 static int voc_rx_freq = 0;
 static int voc_tx_freq = 0;
+#endif
 
 struct session_freq {
 	int freq;
@@ -75,7 +79,9 @@ struct audio_routing_info {
 	int tx_mute;
 	int rx_mute;
 	int voice_state;
+#ifdef CONFIG_MACH_VIGOR
 	int call_state;
+#endif
 	struct mutex copp_list_mutex;
 	struct mutex adm_mutex;
 };
@@ -89,13 +95,6 @@ struct audio_copp_topology {
 	int topolog_id[MAX_SESSIONS];
 };
 static struct audio_copp_topology adm_tx_topology_tbl;
-static struct dev_ctrl_ops default_ctrl_ops;
-static struct dev_ctrl_ops *ctrl_ops = &default_ctrl_ops;
-
-void htc_8x60_register_dev_ctrl_ops(struct dev_ctrl_ops *ops)
-{
-	ctrl_ops = ops;
-}
 
 int msm_reset_all_device(void)
 {
@@ -267,12 +266,14 @@ int msm_get_voice_state(void)
 }
 EXPORT_SYMBOL(msm_get_voice_state);
 
+#ifdef CONFIG_MACH_VIGOR
 int msm_get_call_state(void)
 {
 	pr_debug("call state %d\n", routing_info.call_state);
 	return routing_info.call_state;
 }
 EXPORT_SYMBOL(msm_get_call_state);
+#endif
 
 int msm_set_voice_mute(int dir, int mute, u32 session_id)
 {
@@ -668,20 +669,27 @@ EXPORT_SYMBOL(msm_snddev_get_enc_freq);
 
 int msm_get_voc_freq(int *tx_freq, int *rx_freq)
 {
+#ifndef CONFIG_MACH_VIGOR
+	*tx_freq = routing_info.voice_tx_sample_rate;
+	*rx_freq = routing_info.voice_rx_sample_rate;
+#else
 	*tx_freq = (0 == voc_tx_freq ? routing_info.voice_tx_sample_rate
 				: voc_tx_freq);
 	*rx_freq = (0 == voc_rx_freq ? routing_info.voice_rx_sample_rate
 				: voc_rx_freq);
+#endif
 	return 0;
 }
 EXPORT_SYMBOL(msm_get_voc_freq);
 
+#ifdef CONFIG_MACH_VIGOR
 void msm_set_voc_freq(int tx_freq, int rx_freq)
 {
 	voc_tx_freq = tx_freq;
 	voc_rx_freq = rx_freq;
 }
 EXPORT_SYMBOL(msm_set_voc_freq);
+#endif
 
 int msm_get_voc_route(u32 *rx_id, u32 *tx_id)
 {
@@ -1424,10 +1432,12 @@ void broadcast_event(u32 evt_id, u32 dev_id, u64 session_id)
 		clnt_id = callback->clnt_id;
 		memset(evt_payload, 0, sizeof(union auddev_evt_data));
 
-		if (evt_id == AUDDEV_EVT_START_VOICE || evt_id == AUDDEV_EVT_DEV_CHG_VOICE)
+#ifdef CONFIG_MACH_VIGOR
+		if (evt_id == AUDDEV_EVT_START_VOICE)
 			routing_info.call_state = 1;
 		if (evt_id == AUDDEV_EVT_END_VOICE)
 			routing_info.call_state = 0;
+#endif
 
 		if ((evt_id == AUDDEV_EVT_START_VOICE)
 			|| (evt_id == AUDDEV_EVT_END_VOICE)
@@ -1734,7 +1744,9 @@ static int __init audio_dev_ctrl_init(void)
 	audio_dev_ctrl.voice_tx_dev = NULL;
 	audio_dev_ctrl.voice_rx_dev = NULL;
 	routing_info.voice_state = VOICE_STATE_INVALID;
+#ifdef CONFIG_MACH_VIGOR
 	routing_info.call_state = 0;
+#endif
 
 	mutex_init(&adm_tx_topology_tbl.lock);
 	mutex_init(&routing_info.copp_list_mutex);

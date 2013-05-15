@@ -891,7 +891,6 @@ static int acdb_mmap(struct file *file, struct vm_area_struct *vma)
 		}
 	} else {
 		pr_err("%s: memory is not allocated, yet!\n", __func__);
-		pr_err("%s: vmaend: %lu | vmastart: %lu | mem_len valid? %s\n", __func__, vma->vm_end, vma->vm_start, (atomic64_read(&acdb_data.mem_len)) ? "true" : "false");
 		result = -ENODEV;
 	}
 
