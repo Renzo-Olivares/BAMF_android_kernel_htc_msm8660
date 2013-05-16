@@ -463,6 +463,9 @@ struct msm_frame {
 	int stcam_quality_ind;
 	uint32_t stcam_conv_value;
 #endif
+/*ION*/
+	struct ion_allocation_data ion_alloc;
+	struct ion_fd_data fd_data;
 };
 
 enum msm_st_frame_packing {
