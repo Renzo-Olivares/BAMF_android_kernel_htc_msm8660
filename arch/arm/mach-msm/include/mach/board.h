@@ -32,6 +32,22 @@
 #endif
 #include <mach/msm_bus.h>
 
+
+#define MSM_ION_CAMERA_BASE   0x40E00000
+#define MSM_ION_AUDIO_BASE    0x6FB00000
+
+#define MSM_ION_ROTATOR_SIZE  0x654000
+#define MSM_ION_MM_FW_SIZE    0x200000
+#define MSM_ION_MM_SIZE       0x3D00000
+#define MSM_ION_MFC_SIZE      0x100000
+#define MSM_ION_CAMERA_SIZE   0x2000000
+#define MSM_ION_SF_SIZE       0x4000000
+#define MSM_ION_AUDIO_SIZE	  0x4CF000
+
+#define MSM_ION_QSECOM_SIZE   0xC7000
+#define MSM_ION_HEAP_NUM      9
+
+
 struct msm_camera_io_ext {
 	uint32_t mdcphy;
 	uint32_t mdcsz;

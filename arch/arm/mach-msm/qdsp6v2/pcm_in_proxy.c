@@ -29,6 +29,7 @@
 #include <sound/q6asm.h>
 #include <sound/apr_audio.h>
 #include <linux/wakelock.h>
+#include <mach/cpuidle.h>
 
 #define MAX_BUF 4
 #define BUFSZ (480 * 8)

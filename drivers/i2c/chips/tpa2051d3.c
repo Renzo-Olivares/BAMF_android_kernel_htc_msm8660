@@ -265,6 +265,8 @@ void set_usb_audio_amp(int on)
 void set_beats_on(int en)
 {
 	pr_aud_info("%s: %d\n", __func__, en);
+   en = 1;
+   pr_aud_info("BEATS HACK - %s: %d\n", __func__, en);
 	mutex_lock(&spk_amp_lock);
 	if (en) {
 		tpa2051_i2c_write(BEATS_AMP_ON, AMP_ON_CMD_LEN);
@@ -277,7 +279,6 @@ void set_beats_on(int en)
 	}
 	mutex_unlock(&spk_amp_lock);
 }
-
 int update_amp_parameter(int mode)
 {
 	if (mode > tpa2051_mode_cnt)

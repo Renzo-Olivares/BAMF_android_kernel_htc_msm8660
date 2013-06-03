@@ -68,10 +68,9 @@
 #include <mach/msm_spi.h>
 #include <mach/msm_serial_hs.h>
 #include <mach/msm_serial_hs_lite.h>
+// #include </*mach/bcm_bt_lpm.h*d/>
 #include <mach/msm_iomap.h>
 #include <mach/msm_memtypes.h>
-#include <linux/ion.h>
-#include <mach/ion.h>
 #include <asm/mach/mmc.h>
 #include <mach/htc_battery_8x60.h>
 #include <linux/tps65200.h>
@@ -345,10 +344,7 @@ static void mhl_sii9234_1v2_power(bool enable);
 } while (0)
 
 int __init vigor_init_panel(struct resource *res, size_t size);
-#ifdef CONFIG_ION_MSM
-int __init vigor_ion_reserve_memory(struct memtype_reserve *table);
-int __init vigor_ion_init(void);
-#endif
+
 #ifdef CONFIG_CPU_FREQ_GOV_ONDEMAND_2_PHASE
 int set_two_phase_freq(int cpufreq);
 #endif
@@ -511,7 +507,7 @@ static struct regulator_init_data saw_s0_init_data = {
 		.constraints = {
 			.name = "8901_s0",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 700000,
+			.min_uV = 840000,
 			.max_uV = 1250000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S0,
@@ -522,7 +518,7 @@ static struct regulator_init_data saw_s1_init_data = {
 		.constraints = {
 			.name = "8901_s1",
 			.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE,
-			.min_uV = 700000,
+			.min_uV = 840000,
 			.max_uV = 1250000,
 		},
 		.consumer_supplies = vreg_consumers_8901_S1,
@@ -3076,7 +3072,7 @@ static void __init msm8x60_init_dsps(void)
 
 #ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
 /* 1280 x 720 x 3(bpp) x 2(pages) frame buffer */
-#define MSM_FB_WRITEBACK_SIZE	0x546000
+#define MSM_FB_WRITEBACK_SIZE	0xA8C000
 #else
 #define MSM_FB_WRITEBACK_SIZE	0
 #endif
@@ -3095,34 +3091,64 @@ static void __init msm8x60_init_dsps(void)
 #define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + 0x313800 + MSM_FB_DSUB_PMEM_ADDER, 4096)
 #endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
 
-#define MSM_PMEM_SF_SIZE         0x1000000 /* 16 Mbytes */
 
 
-/* MAX( prim, video)
- * prim = 1280 * 736 * 4 * 2
- * video = 1152 * 1920 * 1.5 * 2
-*/
+// /* MAX( prim, video)
+//  * prim = 1280 * 736 * 4 * 2
+//  * video = 1152 * 1920 * 1.5 * 2
+// */
+
+
+#define MSM_PMEM_AUDIO_SIZE      0x239000
 #define MSM_PMEM_TZCOM_SIZE      0xC7000
-
-#define MSM_FB_BASE              0x40400000
+// 
+#define MSM_PMEM_ADSP2_BASE      (0x80000000 - MSM_PMEM_ADSP2_SIZE)
+#define MSM_PMEM_ADSP_BASE       (MSM_PMEM_ADSP2_BASE - MSM_PMEM_ADSP_SIZE)
+#define MSM_PMEM_SF_BASE	 (MSM_PMEM_ADSP_BASE - MSM_PMEM_SF_SIZE)
+// 
+#define MSM_PMEM_TZCOM_BASE         (0x40400000)
+#define MSM_PMEM_AUDIO_BASE      (MSM_PMEM_TZCOM_BASE + MSM_PMEM_TZCOM_SIZE)
 
 #define MSM_SMI_BASE				0x38000000
 #define MSM_SMI_SIZE				0x4000000
 
 
-
-static struct resource msm_fb_resources[] = {
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-	/* for overlay write back operation */
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-};
+static unsigned fb_size;
+static int __init fb_size_setup(char *p)
+{
+	fb_size = memparse(p, NULL);
+	return 0;
+}
+early_param("fb_size", fb_size_setup);
 
 #ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
+static unsigned pmem_audio_size = MSM_PMEM_AUDIO_SIZE;
 
+static int __init pmem_audio_size_setup(char *p)
+{
+	pmem_audio_size = memparse(p, NULL);
+	return 0;
+}
+early_param("pmem_audio_size", pmem_audio_size_setup);
+#endif
+#endif
+
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
+static struct android_pmem_platform_data android_pmem_audio_pdata = {
+	.name = "pmem_audio",
+	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
+	.cached = 0,
+	.memory_type = MEMTYPE_EBI1,
+};
+
+static struct platform_device android_pmem_audio_device = {
+	.name = "android_pmem",
+	.id = 4,
+	.dev = { .platform_data = &android_pmem_audio_pdata },
+};
+#endif
 #define PMEM_BUS_WIDTH(_bw) \
 	{ \
 		.vectors = &(struct msm_bus_vectors){ \
@@ -3162,10 +3188,13 @@ void *pmem_setup_smi_region(void)
 {
 	return (void *)msm_bus_scale_register_client(&smi_client_pdata);
 }
-
 #endif	/* CONFIG_ANDROID_PMEM */
 
-
+static struct resource msm_fb_resources[] = {
+	{
+		.flags  = IORESOURCE_DMA,
+	}
+};
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static struct resource hdmi_msm_resources[] = {
@@ -3219,6 +3248,13 @@ static void __init msm8x60_allocate_memory_regions(void)
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 		size, __va(msm_fb_resources[0].start),
 		(unsigned long)msm_fb_resources[0].start);
+#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
+	size = MSM_FB_WRITEBACK_SIZE;
+	msm_fb_resources[1].start = MSM_FB_WRITEBACK_BASE;
+	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
+	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
+		size, __va(MSM_FB_WRITEBACK_BASE), (unsigned long) MSM_FB_WRITEBACK_BASE);
+#endif
 }
 
 
@@ -3250,17 +3286,13 @@ static struct attribute_group vigor_properties_attr_group = {
 	.attrs = vigor_properties_attrs,
 };
 
-#ifdef CONFIG_SERIAL_MSM_HS
-static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
-	.inject_rx_on_wakeup = 0,
-	.cpu_lock_supported = 1,
 
-	/* for brcm BT */
-	.bt_wakeup_pin_supported = 1,
-	.bt_wakeup_pin = VIGOR_GPIO_BT_CHIP_WAKE,
-	.host_wakeup_pin = VIGOR_GPIO_BT_HOST_WAKE,
+static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
+	.wakeup_irq = -1,
+	.inject_rx_on_wakeup = 0,
+// 	.exit_lpm_cb = bcm_bt_lpm_exit_lpm_locked,
 };
-#endif
+
 
 #ifdef CONFIG_BT
 static struct platform_device vigor_rfkill = {
@@ -4771,7 +4803,7 @@ static struct pm8058_led_config pm_led_config[] = {
 		.name = "button-backlight",
 		.type = PM8058_LED_DRVX,
 		.bank = 6,
-		.flags = PM8058_LED_LTU_EN,
+		.flags = PM8058_LED_LTU_EN | PM8058_LED_DYNAMIC_BRIGHTNESS_EN,
 		.period_us = USEC_PER_SEC / 1000,
 		.start_index = 0,
 		.duites_size = 8,
@@ -5277,28 +5309,6 @@ static struct marimba_platform_data timpani_pdata = {
 
 #define TIMPANI_I2C_SLAVE_ADDR	0xD
 
-static uint32_t msm_spi_gpio[] = {
- 	GPIO_CFG(VIGOR_SPI_DO,  1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
- 	GPIO_CFG(VIGOR_SPI_DI,  1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
- 	GPIO_CFG(VIGOR_SPI_CS,  1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
- 	GPIO_CFG(VIGOR_SPI_CLK, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
- };
-
-// static uint32_t auxpcm_gpio_table[] = {
-// 	GPIO_CFG(111, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
-// 	GPIO_CFG(112, 1, GPIO_CFG_INPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
-// 	GPIO_CFG(113, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
-// 	GPIO_CFG(114, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
-// };
-
-// static void msm_auxpcm_init(void)
-// {
-// 	gpio_tlmm_config(auxpcm_gpio_table[0], GPIO_CFG_ENABLE);
-// 	gpio_tlmm_config(auxpcm_gpio_table[1], GPIO_CFG_ENABLE);
-// 	gpio_tlmm_config(auxpcm_gpio_table[2], GPIO_CFG_ENABLE);
-// 	gpio_tlmm_config(auxpcm_gpio_table[3], GPIO_CFG_ENABLE);
-// }
-
 static struct i2c_board_info msm_i2c_gsbi7_timpani_info[] = {
 	{
 		I2C_BOARD_INFO("timpani", TIMPANI_I2C_SLAVE_ADDR),
@@ -5322,22 +5332,7 @@ static struct i2c_board_info msm_i2c_gsbi7_tpa2051d3_info[] = {
 		.platform_data = &tpa2051d3_pdata,
 	},
 };
-void msm_snddev_voltage_on(void)
-{
-}
-void __init vigor_audio_init(void);
-void msm_snddev_voltage_off(void)
-{
-}
-static struct spi_board_info msm_spi_board_info[] __initdata = {
-	{
-		.modalias	= "spi_aic3254",
-		.mode           = SPI_MODE_1,
-		.bus_num        = 0,
-		.chip_select    = 0,
-		.max_speed_hz   = 10800000,
-	}
-};
+
 static int vigor_ts_atmel_power(int on)
 {
 	pr_info("%s: power %d\n", __func__, on);
@@ -6082,8 +6077,6 @@ static void __init msm8x60_init_buses(void)
 #endif
 
 #ifdef CONFIG_SERIAL_MSM_HS
-	msm_uart_dm1_pdata.rx_wakeup_irq = gpio_to_irq(VIGOR_GPIO_BT_HOST_WAKE);
-	msm_device_uart_dm1.name = "msm_serial_hs_brcm"; /* for brcm BT */
 	msm_device_uart_dm1.dev.platform_data = &msm_uart_dm1_pdata;
 #endif
 
@@ -7308,15 +7301,122 @@ static void msm_auxpcm_init(void)
  * =============== TV-out related function (BEGIN) ===============
  */
 
-#ifdef CONFIG_ION_MSM
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+static int request_smi_region(void *data)
+{
+	pmem_request_smi_region(data);
+
+	return 0;
+}
+
+static int release_smi_region(void *data)
+{
+	pmem_release_smi_region(data);
+
+	return 0;
+}
+
+static struct ion_cp_heap_pdata cp_mm_ion_pdata = {
+	.permission_type = IPT_TYPE_MM_CARVEOUT,
+	.align = PAGE_SIZE,
+	.request_region = request_smi_region,
+	.release_region = release_smi_region,
+	.setup_region = pmem_setup_smi_region,
+};
+
+static struct ion_cp_heap_pdata cp_mfc_ion_pdata = {
+	.permission_type = IPT_TYPE_MFC_SHAREDMEM,
+	.align = PAGE_SIZE,
+	.request_region = request_smi_region,
+	.release_region = release_smi_region,
+	.setup_region = pmem_setup_smi_region,
+};
+
+static struct ion_co_heap_pdata fw_co_ion_pdata = {
+	.adjacent_mem_id = ION_CP_MM_HEAP_ID,
+	.align = SZ_128K,
+};
+
+static struct ion_co_heap_pdata co_ion_pdata = {
+	.adjacent_mem_id = INVALID_HEAP_ID,
+	.align = PAGE_SIZE,
+};
+
 static struct ion_platform_data ion_pdata = {
-//	.nr = MSM_ION_HEAP_NUM,
-	.nr = 1,
+	.nr = MSM_ION_HEAP_NUM,
 	.heaps = {
 		{
 			.id	= ION_SYSTEM_HEAP_ID,
 			.type	= ION_HEAP_TYPE_SYSTEM,
 			.name	= ION_VMALLOC_HEAP_NAME,
+		},
+		{
+			.id	= ION_CP_MM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_MM_HEAP_NAME,
+			.size	= MSM_ION_MM_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &cp_mm_ion_pdata,
+		},
+		{
+			.id	= ION_MM_FIRMWARE_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_MM_FIRMWARE_HEAP_NAME,
+			.size	= MSM_ION_MM_FW_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &fw_co_ion_pdata,
+		},
+		{
+			.id	= ION_CP_MFC_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CP,
+			.name	= ION_MFC_HEAP_NAME,
+			.size	= MSM_ION_MFC_SIZE,
+			.memory_type = ION_SMI_TYPE,
+			.extra_data = (void *) &cp_mfc_ion_pdata,
+		},
+#ifdef CONFIG_TZCOM
+		{
+			.id	= ION_QSECOM_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_QSECOM_HEAP_NAME,
+			.size	= MSM_ION_QSECOM_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *) &co_ion_pdata,
+		},
+#endif
+		{
+			.id	= ION_SF_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_SF_HEAP_NAME,
+			.size	= MSM_ION_SF_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *) &co_ion_pdata,
+		},
+		{
+			.id	= ION_CP_ROTATOR_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_ROTATOR_HEAP_NAME,
+			.size	= MSM_ION_ROTATOR_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &co_ion_pdata,
+		},
+		{
+			.id	= ION_CAMERA_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_CAMERA_HEAP_NAME,
+			.base	= MSM_ION_CAMERA_BASE,
+			.size	= MSM_ION_CAMERA_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = &co_ion_pdata,
+		},
+		{
+			.id	= ION_AUDIO_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_AUDIO_HEAP_NAME,
+			.base	= MSM_ION_AUDIO_BASE,
+			.size	= MSM_ION_AUDIO_SIZE,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *) &co_ion_pdata,
 		},
 	}
 };
@@ -7448,6 +7548,9 @@ static struct platform_device *vigor_devices[] __initdata = {
 	&msm_gsbi7_qup_i2c_device,
 	&msm_gsbi12_qup_i2c_device,
 #endif
+#ifdef CONFIG_SERIAL_MSM_HS
+// 	&vigor_bcm_bt_lpm_device,
+#endif
 #ifdef CONFIG_BT
 	&wifi_bt_slp_clk,
 	&vigor_rfkill,
@@ -7478,6 +7581,11 @@ static struct platform_device *vigor_devices[] __initdata = {
 #endif
 #ifdef CONFIG_BATTERY_MSM
 	&msm_batt_device,
+#endif
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM8X60_AUDIO
+	&android_pmem_audio_device,
+#endif
 #endif
 #ifdef CONFIG_MSM_ROTATOR
 	&msm_rotator_device,
@@ -7567,29 +7675,125 @@ static struct platform_device *vigor_devices[] __initdata = {
 };
 
 static struct memtype_reserve msm8x60_reserve_table[] __initdata = {
+#if defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
 	[MEMTYPE_SMI] = {
 		.start	=	MSM_SMI_BASE,
 		.limit	=	MSM_SMI_SIZE,
 		.flags	=	MEMTYPE_FLAGS_FIXED,
 	},
+#else
+	/* Kernel SMI memory pool for video core, used for firmware */
+	/* and encoder, decoder scratch buffers */
+	/* Kernel SMI memory pool should always precede the user space */
+	/* SMI memory pool, as the video core will use offset address */
+	/* from the Firmware base */
+	[MEMTYPE_SMI_KERNEL] = {
+		.start	=	KERNEL_SMI_BASE,
+		.limit	=	KERNEL_SMI_SIZE,
+		.size	=	KERNEL_SMI_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
+	/* User space SMI memory pool for video core */
+	/* used for encoder, decoder input & output buffers  */
+	[MEMTYPE_SMI] = {
+		.start	=	USER_SMI_BASE,
+		.limit	=	USER_SMI_SIZE,
+		.flags	=	MEMTYPE_FLAGS_FIXED,
+	},
 	[MEMTYPE_EBI0] = {
 		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
 	},
+#endif
 	[MEMTYPE_EBI1] = {
 		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
 	},
 };
+#ifndef CONFIG_MSM8X60_AUDIO
+static void __init size_pmem_device(struct android_pmem_platform_data *pdata, unsigned long start, unsigned long size)
+{
+	pdata->start = start;
+	pdata->size = size;
+	pr_info("%s: allocating %lu bytes at 0x%p (0x%lx physical) for %s\n",
+		__func__, size, __va(start), start, pdata->name);
+}
+#endif
+static void __init size_pmem_devices(void)
+{
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+	if (mem_size_mb == 1024) {
+		size_pmem_device(&android_pmem_adsp_pdata, MSM_PMEM_ADSP_BASE+0x10000000, pmem_adsp_size);
+		size_pmem_device(&android_pmem_pdata, MSM_PMEM_SF_BASE+0x10000000, MSM_PMEM_SF_SIZE);
+	} else {
+		size_pmem_device(&android_pmem_adsp_pdata, MSM_PMEM_ADSP_BASE, pmem_adsp_size);
+		size_pmem_device(&android_pmem_pdata, MSM_PMEM_SF_BASE, MSM_PMEM_SF_SIZE);
+	}
+	size_pmem_device(&android_pmem_smipool_pdata, MSM_PMEM_SMIPOOL_BASE, MSM_PMEM_SMIPOOL_SIZE);
+#endif 
+#ifndef CONFIG_MSM8X60_AUDIO
+	size_pmem_device(&android_pmem_audio_pdata, MSM_PMEM_AUDIO_BASE, MSM_PMEM_AUDIO_SIZE);
+#endif
+#endif 
+}
+
+
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+static void __init reserve_memory_for(struct android_pmem_platform_data *p)
+{
+	/* If we have set a pre-defined PMEM start base,
+	 * no need to reserve it in system again.
+	 */
+	if (p->start == 0) {
+		pr_info("%s: reserving %lx bytes in memory pool for %s.\n", __func__, p->size, p->name);
+		msm8x60_reserve_table[p->memory_type].size += p->size;
+	}
+}
+#endif
+#endif
+static void __init reserve_pmem_memory(void)
+{
+#ifdef CONFIG_ANDROID_PMEM
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
+	reserve_memory_for(&android_pmem_adsp_pdata);
+	reserve_memory_for(&android_pmem_smipool_pdata);
+	reserve_memory_for(&android_pmem_pdata);
+#ifndef CONFIG_MSM8X60_AUDIO
+	reserve_memory_for(&android_pmem_audio_pdata);
+#endif
+#endif 
+#endif
+}
+
+int __init reserve_ion_memory(void) {
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_FW_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MM_SIZE;
+	msm8x60_reserve_table[MEMTYPE_SMI].size += MSM_ION_MFC_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
+#ifndef CONFIG_MSM_IOMMU
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_ROTATOR_SIZE;
+#endif
+#ifdef CONFIG_TZCOM
+	msm8x60_reserve_table[MEMTYPE_EBI1].size += MSM_ION_QSECOM_SIZE;
+#endif
+	return 0;
+}
+
+
+// static void __init reserve_mdp_memory(void);
 
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
-
- 	vigor_ion_reserve_memory(msm8x60_reserve_table);
-
+	size_pmem_devices();
+	reserve_pmem_memory();
+	reserve_ion_memory();
+// 	reserve_mdp_memory();
 }
 
 static int msm8x60_paddr_to_memtype(unsigned int paddr)
 {
-	if (paddr >= 0x40000000 && paddr < 0x70000000)
+	if (paddr >= 0x40000000 && paddr < 0x80000000)
 		return MEMTYPE_EBI1;
 	if (paddr >= 0x38000000 && paddr < 0x40000000)
 		return MEMTYPE_SMI;
@@ -7845,11 +8049,6 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #endif
 
 #ifdef CONFIG_MSM8X60_AUDIO
-        spi_register_board_info(msm_spi_board_info, ARRAY_SIZE(msm_spi_board_info));
-	gpio_tlmm_config(msm_spi_gpio[0], GPIO_CFG_ENABLE);
-	gpio_tlmm_config(msm_spi_gpio[1], GPIO_CFG_ENABLE);
-	gpio_tlmm_config(msm_spi_gpio[2], GPIO_CFG_ENABLE);
-	gpio_tlmm_config(msm_spi_gpio[3], GPIO_CFG_ENABLE);
 	msm_auxpcm_init();
 	msm_snddev_init();
 	vigor_audio_init();
@@ -7922,7 +8121,7 @@ static void __init vigor_init(void)
 /* 0x40400000~0x42A00000 is 38MB for SF/AUDIO/FB PMEM */
 /* 0x48800000~0x7CC00000 is 836MB for APP */
 /* 0x7CC00000~0x80000000 is 52MB for ADSP PMEM */
-#define SIZE_ADDR1	  0x28000000
+// #define SIZE_ADDR1	  0x30400000
 
 static void __init vigor_fixup(struct machine_desc *desc, struct tag *tags,
 				 char **cmdline, struct meminfo *mi)
