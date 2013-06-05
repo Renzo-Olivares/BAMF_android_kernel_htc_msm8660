@@ -15,6 +15,8 @@
 
 #define ROTATOR_VERSION_01	0xA5B4C301
 
+#define ROTATOR_FLAGS_BIT_PERFORMANCE  (1 << 0)
+
 enum rotator_clk_type {
 	ROTATOR_CORE_CLK,
 	ROTATOR_PCLK,
@@ -39,11 +41,9 @@ struct msm_rotator_data_info {
 	int session_id;
 	struct msmfb_data src;
 	struct msmfb_data dst;
-#ifndef CONFIG_MSM_ROTATOR_LEGACY
 	unsigned int version_key;
 	struct msmfb_data src_chroma;
 	struct msmfb_data dst_chroma;
-#endif
 };
 
 struct msm_rot_clocks {
@@ -56,7 +56,10 @@ struct msm_rotator_platform_data {
 	unsigned int number_of_clocks;
 	unsigned int hardware_version_number;
 	struct msm_rot_clocks *rotator_clks;
-	const char *regulator_name;
+#ifdef CONFIG_MSM_BUS_SCALING
+	struct msm_bus_scale_pdata *bus_scale_table;
+#endif
+	char rot_iommu_split_domain;
 };
 #endif
 
