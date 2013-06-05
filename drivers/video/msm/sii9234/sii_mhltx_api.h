@@ -29,6 +29,9 @@ void 	SiiMhlTxDeviceIsr(void);
 bool SiiMhlTxRcpSend(uint8_t rcpKeyCode);
 bool SiiMhlTxRcpkSend(uint8_t rcpKeyCode);
 bool SiiMhlTxRcpeSend(uint8_t rcpeErrorCode);
+bool SiiMhlTxSetPathEn(void);
+bool SiiMhlTxClrPathEn(void);
+
 extern	void	AppMhlTxDisableInterrupts(void);
 extern	void	AppMhlTxRestoreInterrupts(void);
 extern	void	AppVbusControl(bool powerOn);

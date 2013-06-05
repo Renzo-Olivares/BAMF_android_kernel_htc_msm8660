@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2010, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2008-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -8,11 +8,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
  *
  */
 
@@ -36,7 +31,6 @@
 #include <linux/debugfs.h>
 
 #include "msm_fb_panel.h"
-#include "mach/debug_display.h"
 
 int panel_next_on(struct platform_device *pdev)
 {
@@ -76,7 +70,7 @@ int panel_next_off(struct platform_device *pdev)
 			next_pdata =
 			    (struct msm_fb_panel_data *)next_pdev->dev.
 			    platform_data;
-			if ((next_pdata) && (next_pdata->off))
+			if ((next_pdata) && (next_pdata->on))
 				ret = next_pdata->off(next_pdev);
 		}
 	}
@@ -112,6 +106,10 @@ struct platform_device *msm_fb_device_alloc(struct msm_fb_panel_data *pdata,
 		snprintf(dev_name, sizeof(dev_name), "lcdc");
 		break;
 
+	case LVDS_PANEL:
+		snprintf(dev_name, sizeof(dev_name), "lvds");
+		break;
+
 	case DTV_PANEL:
 		snprintf(dev_name, sizeof(dev_name), "dtv");
 		break;
@@ -119,6 +117,9 @@ struct platform_device *msm_fb_device_alloc(struct msm_fb_panel_data *pdata,
 	case MIPI_VIDEO_PANEL:
 	case MIPI_CMD_PANEL:
 		snprintf(dev_name, sizeof(dev_name), "mipi_dsi");
+		break;
+	case WRITEBACK_PANEL:
+		snprintf(dev_name, sizeof(dev_name), "writeback");
 		break;
 
 	default:

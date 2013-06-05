@@ -19,10 +19,12 @@
 #include <mach/mhl.h>
 #include "TypeDefs.h"
 #include <mach/board.h>
-bool TPI_Init(mhl_board_params);			/* Document purpose, usage */
-void TPI_Poll(void);			/* Document purpose, usage, rename */
+bool TPI_Init(void);				
+void TPI_Poll(void);			
 byte Status_Query(void);
 void D2ToD3(void);
+bool tpi_get_hpd_state(void);
+
 #define	POWER_STATE_D3				3
 #define	POWER_STATE_D0_NO_MHL		2
 #define	POWER_STATE_D0_MHL			0
@@ -64,5 +66,5 @@ extern	void	hdcp_deauthenticate(void);
 extern	void	fill_black_screen(void);
 extern  void	update_mhl_status(bool isMHL, enum usb_connect_type statMHL);
 extern  void	sii9234_disableIRQ(void);
-extern	bool	IsD0Mode(void);
+extern  int	sii9234_power_vote(bool enable);
 #endif

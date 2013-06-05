@@ -1,29 +1,13 @@
 /* Copyright (c) 2008-2010, Code Aurora Forum. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *     * Neither the name of Code Aurora Forum, Inc. nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
  *
- * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
  */
 
@@ -102,11 +86,11 @@ typedef unsigned int boolean;
 #define MSM_FB_ENABLE_DBGFS
 #define FEATURE_MDDI
 
-#if defined(CONFIG_FB_MSM_8X60_DEFAULT_DEPTH_RGB565)
+#if defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGB565)
 #define MSMFB_DEFAULT_TYPE MDP_RGB_565
-#elif defined(CONFIG_FB_MSM_8X60_DEFAULT_DEPTH_ARGB8888)
+#elif defined(CONFIG_FB_MSM_DEFAULT_DEPTH_ARGB8888)
 #define MSMFB_DEFAULT_TYPE MDP_ARGB_8888
-#elif defined(CONFIG_FB_MSM_8X60_DEFAULT_DEPTH_RGBA8888)
+#elif defined(CONFIG_FB_MSM_DEFAULT_DEPTH_RGBA8888)
 #define MSMFB_DEFAULT_TYPE MDP_RGBA_8888
 #else
 #define MSMFB_DEFAULT_TYPE MDP_RGB_565
@@ -118,14 +102,13 @@ typedef unsigned int boolean;
 #define outp(addr, val) outp32(addr, val)
 
 #ifndef MAX
-#define  MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define  MAX( x, y ) (((x) > (y)) ? (x) : (y))
 #endif
 
 #ifndef MIN
-#define  MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define  MIN( x, y ) (((x) < (y)) ? (x) : (y))
 #endif
 
-/*--------------------------------------------------------------------------*/
 
 #define inp32(addr) readl(addr)
 #define inp16(addr) readw(addr)
@@ -143,7 +126,7 @@ typedef unsigned int boolean;
 #define memory_barrier()
 
 #define assert(expr) \
-	if (!(expr)) { \
+	if(!(expr)) { \
 		printk(KERN_ERR "msm_fb: assertion failed! %s,%s,%s,line=%d\n",\
 			#expr, __FILE__, __func__, __LINE__); \
 	}
@@ -166,17 +149,6 @@ typedef unsigned int boolean;
 
 extern u32 msm_fb_msg_level;
 
-/*
- * Message printing priorities:
- * LEVEL 0 KERN_EMERG (highest priority)
- * LEVEL 1 KERN_ALERT
- * LEVEL 2 KERN_CRIT
- * LEVEL 3 KERN_ERR
- * LEVEL 4 KERN_WARNING
- * LEVEL 5 KERN_NOTICE
- * LEVEL 6 KERN_INFO
- * LEVEL 7 KERN_DEBUG (Lowest priority)
- */
 #define MSM_FB_EMERG(msg, ...)    \
 	if (msm_fb_msg_level > 0)  \
 		printk(KERN_EMERG msg, ## __VA_ARGS__);
@@ -217,4 +189,4 @@ extern unsigned char *mipi_dsi_base;
 #undef ENABLE_MDDI_MULTI_READ_WRITE
 #undef ENABLE_FWD_LINK_SKEW_CALIBRATION
 
-#endif /* MSM_FB_DEF_H */
+#endif 

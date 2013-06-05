@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2009, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2008-2009, 2012 Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -8,11 +8,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
  *
  */
 
@@ -38,6 +33,9 @@
 #include "mdp.h"
 #include "msm_fb.h"
 
+extern spinlock_t mdp_spin_lock;
+extern uint32 mdp_intr_mask;
+
 int mdp_dma3_on(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
@@ -55,30 +53,31 @@ int mdp_dma3_on(struct platform_device *pdev)
 		return -EINVAL;
 
 	fbi = mfd->fbi;
-	/* MDP cmd block enable */
+
+	
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 
 	bpp = fbi->var.bits_per_pixel / 8;
 	buf = (uint8 *) fbi->fix.smem_start;
-	buf += fbi->var.xoffset * bpp +
-		fbi->var.yoffset * fbi->fix.line_length;
 
-	/* starting address[31..8] of Video frame buffer is CS0 */
+	buf += calc_fb_offset(mfd, fbi, bpp);
+
+	
 	MDP_OUTP(MDP_BASE + 0xC0008, (uint32) buf >> 3);
 
 	mdp_pipe_ctrl(MDP_DMA3_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 
-	MDP_OUTP(MDP_BASE + 0xC0004, 0x4c60674); /* flicker filter enabled */
-	MDP_OUTP(MDP_BASE + 0xC0010, 0x20);	/* sobel treshold */
+	MDP_OUTP(MDP_BASE + 0xC0004, 0x4c60674); 
+	MDP_OUTP(MDP_BASE + 0xC0010, 0x20);	
 
-	MDP_OUTP(MDP_BASE + 0xC0018, 0xeb0010);	/* Y  Max, Y  min */
-	MDP_OUTP(MDP_BASE + 0xC001C, 0xf00010);	/* Cb Max, Cb min */
-	MDP_OUTP(MDP_BASE + 0xC0020, 0xf00010);	/* Cb Max, Cb min */
+	MDP_OUTP(MDP_BASE + 0xC0018, 0xeb0010);	
+	MDP_OUTP(MDP_BASE + 0xC001C, 0xf00010);	
+	MDP_OUTP(MDP_BASE + 0xC0020, 0xf00010);	
 
-	MDP_OUTP(MDP_BASE + 0xC000C, 0x67686970); /* add a few chars for CC */
-	MDP_OUTP(MDP_BASE + 0xC0000, 0x1);	/* MDP tv out enable */
+	MDP_OUTP(MDP_BASE + 0xC000C, 0x67686970); 
+	MDP_OUTP(MDP_BASE + 0xC0000, 0x1);	
 
-	/* MDP cmd block disable */
+	
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 
 	ret = panel_next_on(pdev);
@@ -94,15 +93,15 @@ int mdp_dma3_off(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	/* MDP cmd block enable */
+	
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 	MDP_OUTP(MDP_BASE + 0xC0000, 0x0);
-	/* MDP cmd block disable */
+	
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 
 	mdp_pipe_ctrl(MDP_DMA3_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 
-	/* delay to make sure the last frame finishes */
+	
 	msleep(16);
 
 	return ret;
@@ -118,11 +117,12 @@ void mdp_dma3_update(struct msm_fb_data_type *mfd)
 	if (!mfd->panel_power_on)
 		return;
 
-	/* no need to power on cmd block since dma3 is running */
+	
 	bpp = fbi->var.bits_per_pixel / 8;
 	buf = (uint8 *) fbi->fix.smem_start;
-	buf += fbi->var.xoffset * bpp +
-		fbi->var.yoffset * fbi->fix.line_length;
+
+	buf += calc_fb_offset(mfd, fbi, bpp);
+
 	MDP_OUTP(MDP_BASE + 0xC0008, (uint32) buf >> 3);
 
 	spin_lock_irqsave(&mdp_spin_lock, flag);
